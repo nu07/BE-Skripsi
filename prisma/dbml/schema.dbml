@@ -1,0 +1,102 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table Mahasiswa {
+  id Int [pk, increment]
+  nim String [unique, not null]
+  nama String [not null]
+  email String [unique, not null]
+  password String [not null]
+  skripsi Skripsi
+  pendaftarans PendaftaranSidang [not null]
+}
+
+Table Dosen {
+  id Int [pk, increment]
+  nidn String [unique, not null]
+  nama String [not null]
+  email String [unique, not null]
+  password String [not null]
+  pembimbing Skripsi [not null]
+  penguji Skripsi [not null]
+}
+
+Table Skripsi {
+  id Int [pk, increment]
+  judul String [not null]
+  id_mahasiswa Int [unique, not null]
+  id_pembimbing Int [not null]
+  id_penguji Int [not null]
+  mahasiswa Mahasiswa [not null]
+  pembimbing Dosen [not null]
+  penguji Dosen [not null]
+  pendaftarans PendaftaranSidang [not null]
+}
+
+Table JadwalSidang {
+  id Int [pk, increment]
+  tanggal DateTime [not null]
+  ruangan String [not null]
+  pendaftarans PendaftaranSidang [not null]
+}
+
+Table PendaftaranSidang {
+  id Int [pk, increment]
+  id_mahasiswa Int [not null]
+  id_skripsi Int [not null]
+  id_jadwal Int [not null]
+  status String [not null]
+  mahasiswa Mahasiswa [not null]
+  skripsi Skripsi [not null]
+  jadwal JadwalSidang [not null]
+  approvalHistories ApprovalHistory [not null]
+}
+
+Table ApprovalHistory {
+  id Int [pk, increment]
+  id_pendaftaran Int [not null]
+  id_admin Int [not null]
+  action String [not null]
+  catatan String
+  tanggal_approval DateTime [default: `now()`, not null]
+  pendaftaran PendaftaranSidang [not null]
+  admin Admin [not null]
+}
+
+Table Admin {
+  id Int [pk, increment]
+  username String [unique, not null]
+  password String [not null]
+  nama String [not null]
+  approvals ApprovalHistory [not null]
+  news News [not null]
+}
+
+Table News {
+  id Int [pk, increment]
+  id_admin Int [not null]
+  title String [not null]
+  content String [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  admin Admin [not null]
+}
+
+Ref: Skripsi.id_mahasiswa - Mahasiswa.id
+
+Ref: Skripsi.id_pembimbing > Dosen.id
+
+Ref: Skripsi.id_penguji > Dosen.id
+
+Ref: PendaftaranSidang.id_mahasiswa > Mahasiswa.id
+
+Ref: PendaftaranSidang.id_skripsi > Skripsi.id
+
+Ref: PendaftaranSidang.id_jadwal > JadwalSidang.id
+
+Ref: ApprovalHistory.id_pendaftaran > PendaftaranSidang.id
+
+Ref: ApprovalHistory.id_admin > Admin.id
+
+Ref: News.id_admin > Admin.id
