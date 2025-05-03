@@ -7,7 +7,14 @@ Table Mahasiswa {
   nim String [unique, not null]
   nama String [not null]
   email String [unique, not null]
+  noHp String
   password String [not null]
+  isDeleted Boolean [not null, default: false]
+  isEligibleForSkripsi Boolean [not null, default: false]
+  isEligibleForSidang Boolean [not null, default: false]
+  catatanSkripsi String
+  usulanPembimbing1 Int
+  usulanPembimbing2 Int
   skripsi Skripsi
   pendaftarans PendaftaranSidang [not null]
 }
@@ -18,26 +25,24 @@ Table Dosen {
   nama String [not null]
   email String [unique, not null]
   password String [not null]
-  pembimbing Skripsi [not null]
-  penguji Skripsi [not null]
+  isDeleted Boolean [not null, default: false]
+  pembimbing1 Skripsi [not null]
+  pembimbing2 Skripsi [not null]
+  penguji PendaftaranSidang [not null]
 }
 
 Table Skripsi {
   id Int [pk, increment]
   judul String [not null]
   id_mahasiswa Int [unique, not null]
-  id_pembimbing Int [not null]
-  id_penguji Int [not null]
+  id_pembimbing1 Int [not null]
+  id_pembimbing2 Int
+  catatanPembayaran String
+  accPembimbing1 Boolean [not null, default: false]
+  accPembimbing2 Boolean [not null, default: false]
   mahasiswa Mahasiswa [not null]
-  pembimbing Dosen [not null]
-  penguji Dosen [not null]
-  pendaftarans PendaftaranSidang [not null]
-}
-
-Table JadwalSidang {
-  id Int [pk, increment]
-  tanggal DateTime [not null]
-  ruangan String [not null]
+  pembimbing1 Dosen [not null]
+  pembimbing2 Dosen
   pendaftarans PendaftaranSidang [not null]
 }
 
@@ -45,11 +50,17 @@ Table PendaftaranSidang {
   id Int [pk, increment]
   id_mahasiswa Int [not null]
   id_skripsi Int [not null]
-  id_jadwal Int [not null]
+  id_jadwal Int
   status String [not null]
+  catatan String
+  tanggal_sidang DateTime
+  id_penguji Int
+  nilai Float
+  catatanHasilSidang String
   mahasiswa Mahasiswa [not null]
   skripsi Skripsi [not null]
-  jadwal JadwalSidang [not null]
+  jadwal JadwalSidang
+  penguji Dosen
   approvalHistories ApprovalHistory [not null]
 }
 
@@ -64,11 +75,19 @@ Table ApprovalHistory {
   admin Admin [not null]
 }
 
+Table JadwalSidang {
+  id Int [pk, increment]
+  tanggal DateTime [not null]
+  ruangan String [not null]
+  pendaftarans PendaftaranSidang [not null]
+}
+
 Table Admin {
   id Int [pk, increment]
   username String [unique, not null]
   password String [not null]
   nama String [not null]
+  isDeleted Boolean [not null, default: false]
   approvals ApprovalHistory [not null]
   news News [not null]
 }
@@ -85,15 +104,17 @@ Table News {
 
 Ref: Skripsi.id_mahasiswa - Mahasiswa.id
 
-Ref: Skripsi.id_pembimbing > Dosen.id
+Ref: Skripsi.id_pembimbing1 > Dosen.id
 
-Ref: Skripsi.id_penguji > Dosen.id
+Ref: Skripsi.id_pembimbing2 > Dosen.id
 
 Ref: PendaftaranSidang.id_mahasiswa > Mahasiswa.id
 
 Ref: PendaftaranSidang.id_skripsi > Skripsi.id
 
 Ref: PendaftaranSidang.id_jadwal > JadwalSidang.id
+
+Ref: PendaftaranSidang.id_penguji > Dosen.id
 
 Ref: ApprovalHistory.id_pendaftaran > PendaftaranSidang.id
 

@@ -1,6 +1,19 @@
-// import UserRoute from './user/user';
-import Lsp from './lsp/lspCourse';
+// routes/index.ts
+import { Router } from 'express';
+import mahasiswaRoutes from './routes/mahasiswa';
+import dosenRoutes from './routes/dosen';
+import adminRoutes from './routes/admin';
+import skripsiRoutes from './routes/skripsi';
+import pendaftaranSidangRoutes from './routes/pendaftaranSidang';
+import authRoutes from '.routes/auth';
 
-const allRoutev1 = [Lsp];
+const router: Router = Router();
 
-export default allRoutev1;
+router.use('/auth', authRoutes);
+router.use('/mahasiswa', mahasiswaRoutes);
+router.use('/dosen', dosenRoutes);
+router.use('/admin', adminRoutes);
+router.use('/skripsi', skripsiRoutes);
+router.use('/pendaftaran-sidang', pendaftaranSidangRoutes);
+
+export default router;

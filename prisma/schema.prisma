@@ -2,19 +2,27 @@ generator client {
   provider = "prisma-client-js"
 }
 
+generator dbml {
+  provider = "prisma-dbml-generator"
+  output   = "../prisma/dbml"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
 model Mahasiswa {
   id                   Int                  @id @default(autoincrement())
   nim                  String               @unique
   nama                 String
   email                String               @unique
+  nohp                 String
   password             String
   isEligibleForSkripsi Boolean              @default(false)
   isEligibleForSidang  Boolean              @default(false)
   catatanSkripsi       String?
+  isDeleted            Boolean              @default(false)
   skripsi              Skripsi?
   pendaftarans         PendaftaranSidang[]
 }
@@ -25,6 +33,7 @@ model Dosen {
   nama          String
   email         String                  @unique
   password      String
+  isDeleted     Boolean                 @default(false)
   pembimbing1   Skripsi[]               @relation("Pembimbing1")
   pembimbing2   Skripsi[]               @relation("Pembimbing2")
   penguji       PendaftaranSidang[]     @relation("PendaftaranSidang_penguji")
@@ -36,8 +45,8 @@ model Skripsi {
   id_mahasiswa        Int                @unique
   id_pembimbing1      Int
   id_pembimbing2      Int?
-  buktiPembayaran     String?            // URL/filepath bukti bayar
   catatanPembayaran   String?
+  isDeleted           Boolean            @default(false)
 
   mahasiswa           Mahasiswa          @relation(fields: [id_mahasiswa], references: [id])
   pembimbing1         Dosen              @relation("Pembimbing1", fields: [id_pembimbing1], references: [id])
@@ -50,11 +59,15 @@ model PendaftaranSidang {
   id_mahasiswa          Int
   id_skripsi            Int
   id_jadwal             Int?
-  buktiPembayaranSidang String?           // URL/filepath bukti bayar sidang
-  status                String            // "Menunggu", "Disetujui", "Ditolak", dll.
+  status                String            // "Menunggu", "Disetujui", "Ditolak"
   catatan               String?
   tanggal_sidang        DateTime?
   id_penguji            Int?
+  hasil_sidang          String?           // Ringkasan/hasil akhir sidang
+  catatan_pengujian     String?           // Catatan dari penguji
+  isApprovedByPembimbing1 Boolean         @default(false)
+  isApprovedByPembimbing2 Boolean         @default(false)
+  isDeleted             Boolean           @default(false)
 
   mahasiswa             Mahasiswa         @relation(fields: [id_mahasiswa], references: [id])
   skripsi               Skripsi           @relation(fields: [id_skripsi], references: [id])
@@ -79,6 +92,7 @@ model JadwalSidang {
   id             Int                @id @default(autoincrement())
   tanggal        DateTime
   ruangan        String
+  isDeleted      Boolean            @default(false)
   pendaftarans   PendaftaranSidang[]
 }
 
@@ -87,6 +101,7 @@ model Admin {
   username       String              @unique
   password       String
   nama           String
+  isDeleted      Boolean             @default(false)
   approvals      ApprovalHistory[]
   news           News[]
 }
@@ -98,5 +113,7 @@ model News {
   content        String
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+  isDeleted      Boolean      @default(false)
+
   admin          Admin        @relation(fields: [id_admin], references: [id])
 }
