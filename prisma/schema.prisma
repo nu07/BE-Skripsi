@@ -2,56 +2,55 @@ generator client {
   provider = "prisma-client-js"
 }
 
-generator dbml {
-  provider = "prisma-dbml-generator"
-  output   = "../prisma/dbml"
-}
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
+generator dbml {
+  provider = "prisma-dbml-generator"
+  output   = "../prisma/dbml"
+}
+
 model Mahasiswa {
-  id                   Int                  @id @default(autoincrement())
-  nim                  String               @unique
+  id                   Int                 @id @default(autoincrement())
+  nim                  String              @unique
   nama                 String
-  email                String               @unique
-  nohp                 String
+  email                String              @unique
   password             String
-  isEligibleForSkripsi Boolean              @default(false)
-  isEligibleForSidang  Boolean              @default(false)
+  isEligibleForSkripsi Boolean             @default(false)
+  isEligibleForSidang  Boolean             @default(false)
   catatanSkripsi       String?
-  isDeleted            Boolean              @default(false)
   skripsi              Skripsi?
   pendaftarans         PendaftaranSidang[]
+  deletedAt            DateTime? // Soft delete flag
 }
 
 model Dosen {
-  id            Int                     @id @default(autoincrement())
-  nidn          String                  @unique
-  nama          String
-  email         String                  @unique
-  password      String
-  isDeleted     Boolean                 @default(false)
-  pembimbing1   Skripsi[]               @relation("Pembimbing1")
-  pembimbing2   Skripsi[]               @relation("Pembimbing2")
-  penguji       PendaftaranSidang[]     @relation("PendaftaranSidang_penguji")
+  id          Int                 @id @default(autoincrement())
+  nidn        String              @unique
+  nama        String
+  email       String              @unique
+  password    String
+  pembimbing1 Skripsi[]           @relation("Pembimbing1")
+  pembimbing2 Skripsi[]           @relation("Pembimbing2")
+  penguji     PendaftaranSidang[] @relation("PendaftaranSidang_penguji")
+  deletedAt   DateTime? // Soft delete flag
 }
 
 model Skripsi {
-  id                  Int                @id @default(autoincrement())
-  judul               String
-  id_mahasiswa        Int                @unique
-  id_pembimbing1      Int
-  id_pembimbing2      Int?
-  catatanPembayaran   String?
-  isDeleted           Boolean            @default(false)
-
-  mahasiswa           Mahasiswa          @relation(fields: [id_mahasiswa], references: [id])
-  pembimbing1         Dosen              @relation("Pembimbing1", fields: [id_pembimbing1], references: [id])
-  pembimbing2         Dosen?             @relation("Pembimbing2", fields: [id_pembimbing2], references: [id])
-  pendaftarans        PendaftaranSidang[]
+  id                Int                 @id @default(autoincrement())
+  judul             String
+  id_mahasiswa      Int                 @unique
+  id_pembimbing1    Int
+  id_pembimbing2    Int?
+  buktiPembayaran   String? // URL/filepath bukti bayar
+  catatanPembayaran String?
+  mahasiswa         Mahasiswa           @relation(fields: [id_mahasiswa], references: [id])
+  pembimbing1       Dosen               @relation("Pembimbing1", fields: [id_pembimbing1], references: [id])
+  pembimbing2       Dosen?              @relation("Pembimbing2", fields: [id_pembimbing2], references: [id])
+  pendaftarans      PendaftaranSidang[]
+  deletedAt         DateTime? // Soft delete flag
 }
 
 model PendaftaranSidang {
@@ -59,61 +58,52 @@ model PendaftaranSidang {
   id_mahasiswa          Int
   id_skripsi            Int
   id_jadwal             Int?
-  status                String            // "Menunggu", "Disetujui", "Ditolak"
+  buktiPembayaranSidang String? // URL/filepath bukti bayar sidang
+  status                String // "Menunggu", "Disetujui", "Ditolak", dll.
   catatan               String?
   tanggal_sidang        DateTime?
   id_penguji            Int?
-  hasil_sidang          String?           // Ringkasan/hasil akhir sidang
-  catatan_pengujian     String?           // Catatan dari penguji
-  isApprovedByPembimbing1 Boolean         @default(false)
-  isApprovedByPembimbing2 Boolean         @default(false)
-  isDeleted             Boolean           @default(false)
-
   mahasiswa             Mahasiswa         @relation(fields: [id_mahasiswa], references: [id])
   skripsi               Skripsi           @relation(fields: [id_skripsi], references: [id])
   jadwal                JadwalSidang?     @relation(fields: [id_jadwal], references: [id])
   penguji               Dosen?            @relation("PendaftaranSidang_penguji", fields: [id_penguji], references: [id])
-  approvalHistories     ApprovalHistory[]
+  approvalHistories     ApprovalHistory[] // Riwayat approval
+  deletedAt             DateTime? // Soft delete flag
 }
 
 model ApprovalHistory {
-  id                 Int               @id @default(autoincrement())
-  id_pendaftaran     Int
-  id_admin           Int
-  action             String            // "ACC" atau "Tolak"
-  catatan            String?
-  tanggal_approval   DateTime          @default(now())
-
-  pendaftaran        PendaftaranSidang @relation(fields: [id_pendaftaran], references: [id])
-  admin              Admin             @relation(fields: [id_admin], references: [id])
+  id               Int               @id @default(autoincrement())
+  id_pendaftaran   Int
+  id_admin         Int
+  action           String // "ACC" atau "Tolak"
+  catatan          String?
+  tanggal_approval DateTime          @default(now())
+  pendaftaran      PendaftaranSidang @relation(fields: [id_pendaftaran], references: [id])
+  admin            Admin             @relation(fields: [id_admin], references: [id])
 }
 
 model JadwalSidang {
-  id             Int                @id @default(autoincrement())
-  tanggal        DateTime
-  ruangan        String
-  isDeleted      Boolean            @default(false)
-  pendaftarans   PendaftaranSidang[]
+  id           Int                 @id @default(autoincrement())
+  tanggal      DateTime
+  ruangan      String
+  pendaftarans PendaftaranSidang[]
 }
 
 model Admin {
-  id             Int                 @id @default(autoincrement())
-  username       String              @unique
-  password       String
-  nama           String
-  isDeleted      Boolean             @default(false)
-  approvals      ApprovalHistory[]
-  news           News[]
+  id        Int               @id @default(autoincrement())
+  username  String            @unique
+  password  String
+  nama      String
+  approvals ApprovalHistory[] // Riwayat approval
+  news      News[] // Berita yang dibuat admin
 }
 
 model News {
-  id             Int         @id @default(autoincrement())
-  id_admin       Int
-  title          String
-  content        String
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  isDeleted      Boolean      @default(false)
-
-  admin          Admin        @relation(fields: [id_admin], references: [id])
+  id        Int      @id @default(autoincrement())
+  id_admin  Int
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  admin     Admin    @relation(fields: [id_admin], references: [id])
 }
