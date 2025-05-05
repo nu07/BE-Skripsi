@@ -3,7 +3,7 @@
 //// ------------------------------------------------------
 
 Table Mahasiswa {
-  id Int [pk, increment]
+  id String [pk]
   nim String [unique, not null]
   nama String [not null]
   email String [unique, not null]
@@ -17,7 +17,7 @@ Table Mahasiswa {
 }
 
 Table Dosen {
-  id Int [pk, increment]
+  id String [pk]
   nidn String [unique, not null]
   nama String [not null]
   email String [unique, not null]
@@ -29,13 +29,14 @@ Table Dosen {
 }
 
 Table Skripsi {
-  id Int [pk, increment]
+  id String [pk]
   judul String [not null]
-  id_mahasiswa Int [unique, not null]
-  id_pembimbing1 Int [not null]
-  id_pembimbing2 Int
+  id_mahasiswa String [unique, not null]
+  id_pembimbing1 String [not null]
+  id_pembimbing2 String
   buktiPembayaran String
   catatanPembayaran String
+  status String
   mahasiswa Mahasiswa [not null]
   pembimbing1 Dosen [not null]
   pembimbing2 Dosen
@@ -44,15 +45,15 @@ Table Skripsi {
 }
 
 Table PendaftaranSidang {
-  id Int [pk, increment]
-  id_mahasiswa Int [not null]
-  id_skripsi Int [not null]
-  id_jadwal Int
+  id String [pk]
+  id_mahasiswa String [not null]
+  id_skripsi String [not null]
+  id_jadwal String
   buktiPembayaranSidang String
   status String [not null]
   catatan String
   tanggal_sidang DateTime
-  id_penguji Int
+  id_penguji String
   mahasiswa Mahasiswa [not null]
   skripsi Skripsi [not null]
   jadwal JadwalSidang
@@ -62,9 +63,9 @@ Table PendaftaranSidang {
 }
 
 Table ApprovalHistory {
-  id Int [pk, increment]
-  id_pendaftaran Int [not null]
-  id_admin Int [not null]
+  id String [pk]
+  id_pendaftaran String [not null]
+  id_admin String [not null]
   action String [not null]
   catatan String
   tanggal_approval DateTime [default: `now()`, not null]
@@ -73,24 +74,25 @@ Table ApprovalHistory {
 }
 
 Table JadwalSidang {
-  id Int [pk, increment]
+  id String [pk]
   tanggal DateTime [not null]
   ruangan String [not null]
   pendaftarans PendaftaranSidang [not null]
 }
 
 Table Admin {
-  id Int [pk, increment]
+  id String [pk]
   username String [unique, not null]
   password String [not null]
   nama String [not null]
   approvals ApprovalHistory [not null]
   news News [not null]
+  deletedAt DateTime
 }
 
 Table News {
-  id Int [pk, increment]
-  id_admin Int [not null]
+  id String [pk]
+  id_admin String [not null]
   title String [not null]
   content String [not null]
   createdAt DateTime [default: `now()`, not null]
