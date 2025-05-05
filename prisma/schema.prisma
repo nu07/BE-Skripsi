@@ -13,7 +13,7 @@ generator dbml {
 }
 
 model Mahasiswa {
-  id                   Int                 @id @default(autoincrement())
+  id                   String              @id @default(uuid()) // UUID
   nim                  String              @unique
   nama                 String
   email                String              @unique
@@ -27,7 +27,7 @@ model Mahasiswa {
 }
 
 model Dosen {
-  id          Int                 @id @default(autoincrement())
+  id          String              @id @default(uuid()) // UUID
   nidn        String              @unique
   nama        String
   email       String              @unique
@@ -39,13 +39,14 @@ model Dosen {
 }
 
 model Skripsi {
-  id                Int                 @id @default(autoincrement())
+  id                String              @id @default(uuid()) // UUID
   judul             String
-  id_mahasiswa      Int                 @unique
-  id_pembimbing1    Int
-  id_pembimbing2    Int?
+  id_mahasiswa      String              @unique // Tambahkan @unique di sini
+  id_pembimbing1    String
+  id_pembimbing2    String?
   buktiPembayaran   String? // URL/filepath bukti bayar
   catatanPembayaran String?
+  status            String?  
   mahasiswa         Mahasiswa           @relation(fields: [id_mahasiswa], references: [id])
   pembimbing1       Dosen               @relation("Pembimbing1", fields: [id_pembimbing1], references: [id])
   pembimbing2       Dosen?              @relation("Pembimbing2", fields: [id_pembimbing2], references: [id])
@@ -54,15 +55,15 @@ model Skripsi {
 }
 
 model PendaftaranSidang {
-  id                    Int               @id @default(autoincrement())
-  id_mahasiswa          Int
-  id_skripsi            Int
-  id_jadwal             Int?
-  buktiPembayaranSidang String? // URL/filepath bukti bayar sidang
+  id                    String            @id @default(uuid()) // UUID
+  id_mahasiswa          String
+  id_skripsi            String
+  id_jadwal             String?
+  buktiPembayaranSidang String? // URL/filepath bukti bayar sidang.
   status                String // "Menunggu", "Disetujui", "Ditolak", dll.
   catatan               String?
   tanggal_sidang        DateTime?
-  id_penguji            Int?
+  id_penguji            String?
   mahasiswa             Mahasiswa         @relation(fields: [id_mahasiswa], references: [id])
   skripsi               Skripsi           @relation(fields: [id_skripsi], references: [id])
   jadwal                JadwalSidang?     @relation(fields: [id_jadwal], references: [id])
@@ -72,9 +73,9 @@ model PendaftaranSidang {
 }
 
 model ApprovalHistory {
-  id               Int               @id @default(autoincrement())
-  id_pendaftaran   Int
-  id_admin         Int
+  id               String            @id @default(uuid()) // UUID
+  id_pendaftaran   String
+  id_admin         String
   action           String // "ACC" atau "Tolak"
   catatan          String?
   tanggal_approval DateTime          @default(now())
@@ -83,24 +84,25 @@ model ApprovalHistory {
 }
 
 model JadwalSidang {
-  id           Int                 @id @default(autoincrement())
+  id           String              @id @default(uuid()) // UUID
   tanggal      DateTime
   ruangan      String
   pendaftarans PendaftaranSidang[]
 }
 
 model Admin {
-  id        Int               @id @default(autoincrement())
+  id        String            @id @default(uuid()) // UUID
   username  String            @unique
   password  String
   nama      String
   approvals ApprovalHistory[] // Riwayat approval
   news      News[] // Berita yang dibuat admin
+  deletedAt DateTime?         // Soft delete flag
 }
 
 model News {
-  id        Int      @id @default(autoincrement())
-  id_admin  Int
+  id        String   @id @default(uuid()) // UUID
+  id_admin  String
   title     String
   content   String
   createdAt DateTime @default(now())

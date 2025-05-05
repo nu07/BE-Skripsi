@@ -15,7 +15,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@prisma/client": "^5.13.0",
+    "@prisma/client": "^5.22.0",
     "@types/cors": "^2.8.17",
     "@types/node": "^20.11.6",
     "bcryptjs": "^2.4.3",
