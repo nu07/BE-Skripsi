@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
 
@@ -338,5 +339,225 @@ export const softDeleteAdmin = async (req: Request, res: Response) => {
       message: 'Error soft deleting admin',
       error: error.message,
     });
+  }
+};
+
+export const getApprovalHistories = async (req: Request, res: Response) => {
+  try {
+    const approvalHistories = await prisma.approvalHistory.findMany();
+    return res.status(200).json(approvalHistories);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server.' });
+  }
+};
+
+export const getApprovalHistoryById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const approvalHistory = await prisma.approvalHistory.findUnique({
+      where: { id },
+    });
+
+    if (!approvalHistory) {
+      return res.status(404).json({ message: 'Approval history tidak ditemukan' });
+    }
+
+    return res.status(200).json(approvalHistory);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server.' });
+  }
+};
+
+export const createNews = async (req: Request, res: Response) => {
+  try {
+    const { title, content, id_admin } = req.body;
+
+    const news = await prisma.news.create({
+      data: {
+        title,
+        content,
+        id_admin,
+      },
+    });
+
+    return res.status(201).json(news);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server.' });
+  }
+};
+
+export const getAllNews = async (req: Request, res: Response) => {
+  try {
+    const news = await prisma.news.findMany();
+    return res.status(200).json(news);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server.' });
+  }
+};
+
+export const getNewsById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const news = await prisma.news.findUnique({
+      where: { id },
+    });
+
+    if (!news) {
+      return res.status(404).json({ message: 'Berita tidak ditemukan' });
+    }
+
+    return res.status(200).json(news);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server.' });
+  }
+};
+
+export const updateNews = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { title, content } = req.body;
+
+    const updatedNews = await prisma.news.update({
+      where: { id },
+      data: {
+        title,
+        content,
+      },
+    });
+
+    return res.status(200).json(updatedNews);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server.' });
+  }
+};
+
+export const deleteNews = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    await prisma.news.delete({
+      where: { id },
+    });
+
+    return res.status(200).json({ message: 'Berita berhasil dihapus' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server.' });
+  }
+};
+
+export const createJadwalSidang = async (req: Request, res: Response) => {
+  try {
+    const { tanggal, ruangan } = req.body;
+
+    const jadwal = await prisma.jadwalSidang.create({
+      data: {
+        tanggal,
+        ruangan,
+      },
+    });
+
+    return res.status(201).json(jadwal);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server.' });
+  }
+};
+
+export const getAllJadwalSidang = async (req: Request, res: Response) => {
+  try {
+    const jadwals = await prisma.jadwalSidang.findMany();
+    return res.status(200).json(jadwals);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server.' });
+  }
+};
+
+export const getJadwalSidangById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const jadwal = await prisma.jadwalSidang.findUnique({
+      where: { id },
+    });
+
+    if (!jadwal) {
+      return res.status(404).json({ message: 'Jadwal Sidang tidak ditemukan' });
+    }
+
+    return res.status(200).json(jadwal);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server.' });
+  }
+};
+
+export const updateJadwalSidang = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { tanggal, ruangan } = req.body;
+
+    const updatedJadwal = await prisma.jadwalSidang.update({
+      where: { id },
+      data: {
+        tanggal,
+        ruangan,
+      },
+    });
+
+    return res.status(200).json(updatedJadwal);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server.' });
+  }
+};
+
+export const deleteJadwalSidang = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    await prisma.jadwalSidang.delete({
+      where: { id },
+    });
+
+    return res.status(200).json({ message: 'Jadwal Sidang berhasil dihapus' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server.' });
+  }
+};
+
+export const loginAdmin = async (req: Request, res: Response) => {
+  try {
+    const { username, password } = req.body;
+
+    const admin = await prisma.admin.findUnique({
+      where: { username },
+    });
+
+    if (!admin) {
+      return res.status(404).json({ message: 'Admin tidak ditemukan' });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, admin.password);
+
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: 'Password salah' });
+    }
+
+    const token = jwt.sign({ id: admin.id, username: admin.username }, process.env.JWT_SECRET!, {
+      expiresIn: '1h',
+    });
+
+    return res.status(200).json({ message: 'Login berhasil', token });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server.' });
   }
 };
