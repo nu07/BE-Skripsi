@@ -64,7 +64,7 @@ export const getStatus = async (req: Request, res: Response) => {
 
 export const uploadBuktiPembayaran = async (req: Request, res: Response) => {
   const { mahasiswaId } = req.params;
-  const file = req.files?.buktiPembayaran; // Middleware untuk file upload
+  const file = req.file?.buktiPembayaran; // Middleware untuk file upload
 
   if (!file) {
     return res.status(400).send('Bukti pembayaran tidak ditemukan.');
