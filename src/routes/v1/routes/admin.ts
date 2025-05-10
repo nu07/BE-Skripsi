@@ -29,4 +29,26 @@ router.put('/admin/:id', AdminController.updateAdmin); // Update Admin
 router.delete('/admin/force/:id', AdminController.deleteAdmin); // Hapus Admin
 router.delete('/admin/:id', AdminController.softDeleteAdmin);
 
+// approval
+router.get('/approval-history', AdminController.getApprovalHistories);
+router.get('/approval-history/:id', AdminController.getApprovalHistoryById);
+
+// berita
+router.post('/news', AdminController.createNews);
+router.get('/news', AdminController.getAllNews);
+router.get('/news/:id', AdminController.getNewsById);
+router.put('/news/:id', AdminController.updateNews);
+router.delete('/news/:id', AdminController.deleteNews);
+
+// jadwal sidang
+
+router.post('/jadwal', AdminController.createJadwalSidang);
+router.get('/jadwal', AdminController.getAllJadwalSidang);
+router.get('/jadwal/:id', AdminController.getJadwalSidangById);
+router.put('/jadwal/:id', AdminController.updateJadwalSidang);
+router.delete('/jadwal/:id', AdminController.deleteJadwalSidang);
+
+// . Validasi dan Otentikasi
+router.post('/login', AdminController.loginAdmin);
+
 export default router;
