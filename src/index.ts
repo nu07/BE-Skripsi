@@ -8,14 +8,14 @@ import fs from 'fs';
 dotenv.config();
 
 const app: Express = express();
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 const Port = process.env.PORT || 3000;
 const publicFolderPath = path.resolve(__dirname, '../public');
 const folder = ['./public', './public/images', './public/images/user'];
 let corsOptions = {
   origin: '*',
 };
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
 app.use(cors<Request>(corsOptions));
 app.use('/public', express.static(publicFolderPath));
 app.use('/v1', RouteV1);

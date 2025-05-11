@@ -32,13 +32,13 @@ Table Skripsi {
   id String [pk]
   judul String [not null]
   id_mahasiswa String [unique, not null]
-  id_pembimbing1 String [not null]
+  id_pembimbing1 String
   id_pembimbing2 String
   buktiPembayaran String
   catatanPembayaran String
   status String
   mahasiswa Mahasiswa [not null]
-  pembimbing1 Dosen [not null]
+  pembimbing1 Dosen
   pembimbing2 Dosen
   pendaftarans PendaftaranSidang [not null]
   deletedAt DateTime

@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 // 1. Tambah Mahasiswa
 export const createMahasiswa = async (req: Request, res: Response) => {
   try {
-    const { nim, nama, email, password } = req.body;
+    const { nim, nama, email, password, isEligibleForSkripsi = true } = req.body;
 
     // Validasi jika nim atau email sudah ada
     const existingMahasiswa = await prisma.mahasiswa.findUnique({
@@ -37,6 +37,7 @@ export const createMahasiswa = async (req: Request, res: Response) => {
         nama,
         email,
         password: hashedPassword,
+        isEligibleForSkripsi,
       },
     });
 
@@ -177,6 +178,16 @@ export const updateSkripsiByAdmin = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Terjadi kesalahan server.' });
+  }
+};
+
+export const getAllSkripsi = async (req: Request, res: Response) => {
+  try {
+    const skripsi = await prisma.skripsi.findMany(); // Mendapatkan semua admin
+    res.status(200).json(skripsi);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch admins' });
   }
 };
 
@@ -551,13 +562,50 @@ export const loginAdmin = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Password salah' });
     }
 
-    const token = jwt.sign({ id: admin.id, username: admin.username }, process.env.JWT_SECRET!, {
-      expiresIn: '1h',
+    const expired = 86400; // 24 Jam
+    const token = jwt.sign({ data: admin }, process.env.jwt_secret_key, {
+      expiresIn: expired, // 24 Jam
     });
 
-    return res.status(200).json({ message: 'Login berhasil', token });
+    delete admin.password;
+
+    return res.status(200).json({
+      message: 'Login berhasil',
+      token: token,
+      status: 200,
+      data: admin,
+    });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Terjadi kesalahan server.' });
+    return res.status(500).json({
+      message: 'Terjadi kesalahan server.',
+      status: 404,
+    });
+  }
+};
+
+export const setPembimbing = async (req: Request, res: Response) => {
+  const { idSkripsi, idPembimbing1, idPembimbing2 } = req.body;
+
+  if (!idSkripsi || !idPembimbing1) {
+    return res.status(400).json({ message: 'ID Skripsi dan Pembimbing 1 wajib diisi.' });
+  }
+
+  try {
+    const skripsi = await prisma.skripsi.update({
+      where: { id: idSkripsi },
+      data: {
+        id_pembimbing1: idPembimbing1,
+        id_pembimbing2: idPembimbing2 || null, // Pembimbing 2 opsional
+      },
+    });
+
+    res.status(200).json({
+      message: 'Pembimbing berhasil ditetapkan.',
+      data: skripsi,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Gagal menetapkan pembimbing.' });
   }
 };
