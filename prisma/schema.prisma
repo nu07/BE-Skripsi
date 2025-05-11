@@ -42,13 +42,13 @@ model Skripsi {
   id                String              @id @default(uuid()) // UUID
   judul             String
   id_mahasiswa      String              @unique // Tambahkan @unique di sini
-  id_pembimbing1    String
+  id_pembimbing1    String?
   id_pembimbing2    String?
   buktiPembayaran   String? // URL/filepath bukti bayar
   catatanPembayaran String?
   status            String?  
   mahasiswa         Mahasiswa           @relation(fields: [id_mahasiswa], references: [id])
-  pembimbing1       Dosen               @relation("Pembimbing1", fields: [id_pembimbing1], references: [id])
+  pembimbing1       Dosen?               @relation("Pembimbing1", fields: [id_pembimbing1], references: [id])
   pembimbing2       Dosen?              @relation("Pembimbing2", fields: [id_pembimbing2], references: [id])
   pendaftarans      PendaftaranSidang[]
   deletedAt         DateTime? // Soft delete flag

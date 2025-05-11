@@ -25,7 +25,7 @@
       "@routes/*": ["src/routes/*"],
       "@models/*": ["src/models/*"],
       "@typing/*": ["src/types/*"],
-      "@middleware/*": ["src/middleware/*"],
+      "@middleware/*": ["src/middlewares/*"],
       "@config/*": ["src/config/*"]
     }
   },

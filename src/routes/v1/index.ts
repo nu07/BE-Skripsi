@@ -1,16 +1,12 @@
 import { Router } from 'express';
 import adminRoutes from './routes/admin';
-// import authRoutes from './routes/auth.route';
 import mahasiswaRoutes from './routes/mahasiswa';
-// import dosenRoutes from './routes/dosen.route';
+import dosenRoutes from './routes/dosen';
 
 const router: Router = Router();
 
 router.use('/', adminRoutes);
 router.use('/', mahasiswaRoutes);
-
-// router.use('/auth', authRoutes);
-// router.use('/mahasiswa', mahasiswaRoutes);
-// router.use('/dosen', dosenRoutes);
+router.use('/', dosenRoutes);
 
 export default router;

@@ -1,14 +1,15 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import path from 'path';
+import fs from 'fs';
 
 const prisma = new PrismaClient();
 
 export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
-  console.log(email);
-  console.log(password);
   if (!email || !password) {
     return res.status(400).send('Email dan password harus diisi.');
   }
@@ -26,8 +27,18 @@ export const login = async (req: Request, res: Response) => {
     if (!isPasswordValid) {
       return res.status(401).send('Password salah.');
     }
+    const expired = 86400; // 24 Jam
+    const token = jwt.sign({ data: mahasiswa }, process.env.jwt_secret_key, {
+      expiresIn: expired, // 24 Jam
+    });
+    delete mahasiswa.password;
 
-    res.status(200).send('Login berhasil!');
+    return res.status(200).json({
+      message: 'Login berhasil',
+      token: token,
+      status: 200,
+      data: mahasiswa,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).send('Terjadi kesalahan pada server.');
@@ -35,11 +46,9 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const getStatus = async (req: Request, res: Response) => {
-  const { mahasiswaId } = req.params;
-
   try {
     const mahasiswa = await prisma.mahasiswa.findUnique({
-      where: { id: mahasiswaId },
+      where: { id: req.userId },
       select: {
         isEligibleForSkripsi: true,
         isEligibleForSidang: true,
@@ -50,20 +59,34 @@ export const getStatus = async (req: Request, res: Response) => {
     if (!mahasiswa) {
       return res.status(404).send('Mahasiswa tidak ditemukan.');
     }
-
-    res.status(200).json({
+    const data = {
       isEligibleForSkripsi: mahasiswa.isEligibleForSkripsi,
       isEligibleForSidang: mahasiswa.isEligibleForSidang,
       catatanSkripsi: mahasiswa.catatanSkripsi,
-    });
+    };
+    if (mahasiswa.isEligibleForSkripsi) {
+      res.status(200).json({
+        message: 'Selamat Anda Di Nyatakan Layar Mengikuti Skripsi',
+        data: data,
+        status: 200,
+      });
+    } else {
+      res.status(200).json({
+        message: 'Mohon Maaf Anda Belum Berhak Mengikut Skripsi',
+        data,
+        status: 200,
+      });
+    }
   } catch (error) {
     console.error(error);
-    res.status(500).send('Terjadi kesalahan pada server.');
+    res.status(500).json({
+      message: 'error',
+      error,
+    });
   }
 };
 
 export const uploadBuktiPembayaran = async (req: Request, res: Response) => {
-  const { mahasiswaId } = req.params;
   const file = req.file?.buktiPembayaran; // Middleware untuk file upload
 
   if (!file) {
@@ -74,7 +97,7 @@ export const uploadBuktiPembayaran = async (req: Request, res: Response) => {
     const filePath = `/uploads/${new Date()}`;
 
     await prisma.skripsi.update({
-      where: { id_mahasiswa: mahasiswaId },
+      where: { id_mahasiswa: req.userId },
       data: { buktiPembayaran: filePath },
     });
 
@@ -86,13 +109,11 @@ export const uploadBuktiPembayaran = async (req: Request, res: Response) => {
 };
 
 export const getHasilSidang = async (req: Request, res: Response) => {
-  const { mahasiswaId } = req.params;
-
   try {
     // Gunakan findMany jika ada kemungkinan lebih dari satu pendaftaran sidang per mahasiswa
     const hasilSidang = await prisma.pendaftaranSidang.findMany({
       where: {
-        id_mahasiswa: mahasiswaId, // Filter berdasarkan id_mahasiswa
+        id_mahasiswa: req.userId, // Filter berdasarkan id_mahasiswa
       },
       select: {
         status: true,
@@ -113,11 +134,9 @@ export const getHasilSidang = async (req: Request, res: Response) => {
 };
 
 export const getPembimbing = async (req: Request, res: Response) => {
-  const { mahasiswaId } = req.params;
-
   try {
     const mahasiswa = await prisma.mahasiswa.findUnique({
-      where: { id: mahasiswaId },
+      where: { id: req.userId },
       select: {
         skripsi: {
           select: {
@@ -150,4 +169,157 @@ export const getPembimbing = async (req: Request, res: Response) => {
     console.error(error);
     res.status(500).send('Terjadi kesalahan pada server.');
   }
+};
+
+// Upload bukti pembayaran skripsi
+export const uploadBuktiPembayaranSkripsi = async (req: Request, res: Response) => {
+  const { judul } = req.body;
+  const file = req.file;
+
+  if (!file) {
+    return res.status(400).send('Bukti pembayaran tidak ditemukan.');
+  }
+  // bisa nambahin id_pembimbing1 dan 2 kedepanya.
+  const filePath = file.path;
+
+  try {
+    // Cek apakah skripsi sudah ada
+    const existingSkripsi = await prisma.skripsi.findUnique({
+      where: { id_mahasiswa: req.userId },
+    });
+
+    if (existingSkripsi) {
+      // Update bukti pembayaran
+      removeImage(existingSkripsi.buktiPembayaran);
+      await prisma.skripsi.update({
+        where: { id_mahasiswa: req.userId },
+        data: { buktiPembayaran: filePath, status: 'Menunggu' },
+      });
+    } else {
+      await prisma.skripsi.create({
+        data: {
+          id_mahasiswa: req.userId,
+          judul: judul,
+          // Jangan sertakan pembimbing jika memang belum ditentukan
+          buktiPembayaran: filePath,
+          status: 'Menunggu',
+        },
+      });
+    }
+
+    res.status(200).send('Bukti pembayaran skripsi berhasil diunggah.');
+  } catch (error) {
+    console.error(error);
+    removeImage(filePath);
+    res.status(500).json({
+      message: 'Gagal mengunggah bukti pembayaran.',
+      err: error,
+    });
+  }
+};
+
+// Lihat data skripsi mahasiswa
+export const getSkripsi = async (req: Request, res: Response) => {
+  try {
+    const skripsi = await prisma.skripsi.findUnique({
+      where: { id_mahasiswa: req.userId as string },
+      select: {
+        judul: true,
+        status: true,
+        catatanPembayaran: true,
+        buktiPembayaran: true,
+      },
+    });
+
+    if (!skripsi) return res.status(404).send('Data skripsi tidak ditemukan.');
+
+    return res.status(200).json(skripsi);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send('Terjadi kesalahan saat mengambil data skripsi.');
+  }
+};
+
+// Daftar sidang (insert PendaftaranSidang)
+export const daftarSidang = async (req: Request, res: Response) => {
+  const { id_skripsi } = req.body;
+
+  try {
+    const pendaftaran = await prisma.pendaftaranSidang.create({
+      data: {
+        id_mahasiswa: req.userId,
+        id_skripsi,
+        status: 'Menunggu',
+      },
+    });
+
+    res.status(201).json(pendaftaran);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Gagal mendaftar sidang.');
+  }
+};
+
+// Lihat approval history
+export const getApprovalHistory = async (req: Request, res: Response) => {
+  try {
+    const pendaftaran = await prisma.pendaftaranSidang.findFirst({
+      where: { id_mahasiswa: req.userId as string },
+      include: {
+        approvalHistories: {
+          include: {
+            admin: { select: { nama: true } },
+          },
+        },
+      },
+    });
+
+    if (!pendaftaran) return res.status(404).send('Pendaftaran tidak ditemukan.');
+
+    res.status(200).json(pendaftaran.approvalHistories);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Gagal mengambil approval history.');
+  }
+};
+
+// Lihat jadwal sidang
+export const getJadwalSidang = async (req: Request, res: Response) => {
+  try {
+    const pendaftaran = await prisma.pendaftaranSidang.findFirst({
+      where: { id_mahasiswa: req.userId as string },
+      include: {
+        jadwal: true,
+      },
+    });
+
+    if (!pendaftaran?.jadwal) return res.status(404).send('Jadwal sidang belum ditentukan.');
+
+    res.status(200).json(pendaftaran.jadwal);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Gagal mengambil jadwal sidang.');
+  }
+};
+
+// Lihat berita terbaru dari admin
+export const getNews = async (_req: Request, res: Response) => {
+  try {
+    const news = await prisma.news.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        admin: { select: { nama: true } },
+      },
+    });
+
+    res.status(200).json(news);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Gagal mengambil berita.');
+  }
+};
+
+const removeImage = (filePath) => {
+  filePath = path.join(__dirname, '../../../../', filePath);
+  fs.unlink(filePath, (err) => err);
 };
