@@ -24,6 +24,8 @@ model Mahasiswa {
   skripsi              Skripsi?
   pendaftarans         PendaftaranSidang[]
   deletedAt            DateTime? // Soft delete flag
+  approvalSkripsis  ApprovalSkripsi[]   @relation("ApprovalSkripsiMahasiswa")
+  
 }
 
 model Dosen {
@@ -36,6 +38,7 @@ model Dosen {
   pembimbing2 Skripsi[]           @relation("Pembimbing2")
   penguji     PendaftaranSidang[] @relation("PendaftaranSidang_penguji")
   deletedAt   DateTime? // Soft delete flag
+ approvalSkripsis ApprovalSkripsi[] @relation("ApprovalDosen")
 }
 
 model Skripsi {
@@ -46,7 +49,11 @@ model Skripsi {
   id_pembimbing2    String?
   buktiPembayaran   String? // URL/filepath bukti bayar
   catatanPembayaran String?
-  status            String?  
+  status            String?
+  acc_pembimbing1 Boolean? // default: false
+  acc_pembimbing2 Boolean? // default: false
+  catatan_pembimbing1 String?
+  catatan_pembimbing2 String?  
   mahasiswa         Mahasiswa           @relation(fields: [id_mahasiswa], references: [id])
   pembimbing1       Dosen?               @relation("Pembimbing1", fields: [id_pembimbing1], references: [id])
   pembimbing2       Dosen?              @relation("Pembimbing2", fields: [id_pembimbing2], references: [id])
@@ -70,6 +77,21 @@ model PendaftaranSidang {
   penguji               Dosen?            @relation("PendaftaranSidang_penguji", fields: [id_penguji], references: [id])
   approvalHistories     ApprovalHistory[] // Riwayat approval
   deletedAt             DateTime? // Soft delete flag
+}
+
+model ApprovalSkripsi {
+  id           String   @id @default(uuid())
+  id_mahasiswa String
+  id_dosen     String
+  status       String   // 'ACC' atau 'TOLAK'
+  catatan      String?
+  role         String   // 'pembimbing1' atau 'pembimbing2'
+  createdAt    DateTime @default(now())
+
+  mahasiswa    Mahasiswa @relation("ApprovalSkripsiMahasiswa", fields: [id_mahasiswa], references: [id])
+  dosen        Dosen     @relation("ApprovalDosen", fields: [id_dosen], references: [id])
+
+  @@unique([id_mahasiswa, id_dosen, role]) // agar 1 dosen hanya 1 approval per role
 }
 
 model ApprovalHistory {

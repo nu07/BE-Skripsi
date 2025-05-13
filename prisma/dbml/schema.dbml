@@ -14,6 +14,7 @@ Table Mahasiswa {
   skripsi Skripsi
   pendaftarans PendaftaranSidang [not null]
   deletedAt DateTime
+  approvalSkripsis ApprovalSkripsi [not null]
 }
 
 Table Dosen {
@@ -26,6 +27,7 @@ Table Dosen {
   pembimbing2 Skripsi [not null]
   penguji PendaftaranSidang [not null]
   deletedAt DateTime
+  approvalSkripsis ApprovalSkripsi [not null]
 }
 
 Table Skripsi {
@@ -37,6 +39,10 @@ Table Skripsi {
   buktiPembayaran String
   catatanPembayaran String
   status String
+  acc_pembimbing1 Boolean
+  acc_pembimbing2 Boolean
+  catatan_pembimbing1 String
+  catatan_pembimbing2 String
   mahasiswa Mahasiswa [not null]
   pembimbing1 Dosen
   pembimbing2 Dosen
@@ -60,6 +66,22 @@ Table PendaftaranSidang {
   penguji Dosen
   approvalHistories ApprovalHistory [not null]
   deletedAt DateTime
+}
+
+Table ApprovalSkripsi {
+  id String [pk]
+  id_mahasiswa String [not null]
+  id_dosen String [not null]
+  status String [not null]
+  catatan String
+  role String [not null]
+  createdAt DateTime [default: `now()`, not null]
+  mahasiswa Mahasiswa [not null]
+  dosen Dosen [not null]
+
+  indexes {
+    (id_mahasiswa, id_dosen, role) [unique]
+  }
 }
 
 Table ApprovalHistory {
@@ -113,6 +135,10 @@ Ref: PendaftaranSidang.id_skripsi > Skripsi.id
 Ref: PendaftaranSidang.id_jadwal > JadwalSidang.id
 
 Ref: PendaftaranSidang.id_penguji > Dosen.id
+
+Ref: ApprovalSkripsi.id_mahasiswa > Mahasiswa.id
+
+Ref: ApprovalSkripsi.id_dosen > Dosen.id
 
 Ref: ApprovalHistory.id_pendaftaran > PendaftaranSidang.id
 

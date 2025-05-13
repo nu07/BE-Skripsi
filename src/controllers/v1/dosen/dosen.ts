@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
 
@@ -19,8 +20,19 @@ export const login = async (req: Request, res: Response) => {
 
     const valid = await bcrypt.compare(password, dosen.password);
     if (!valid) return res.status(401).send('Password salah.');
+    const expired = 86400; // 24 Jam
+    const token = jwt.sign({ data: dosen }, process.env.jwt_secret_key, {
+      expiresIn: expired, // 24 Jam
+    });
 
-    res.status(200).json({ message: 'Login berhasil!', dosenId: dosen.id });
+    delete dosen.password;
+
+    return res.status(200).json({
+      message: 'Login berhasil',
+      token: token,
+      status: 200,
+      data: dosen,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).send('Login gagal.');
@@ -51,20 +63,57 @@ export const getDaftarBimbingan = async (req: Request, res: Response) => {
 // ACC atau tolak skripsi
 export const approveSkripsi = async (req: Request, res: Response) => {
   const { mahasiswaId, status, catatan } = req.body;
+  const dosenId = req.userId; // diasumsikan sudah diambil dari token
 
   try {
-    const update = await prisma.mahasiswa.update({
-      where: { id: mahasiswaId },
-      data: {
-        isEligibleForSidang: status === 'ACC',
-        catatanSkripsi: catatan,
+    // Cari data skripsi mahasiswa dan pastikan dosen adalah pembimbingnya
+    const skripsi = await prisma.skripsi.findFirst({
+      where: {
+        id_mahasiswa: mahasiswaId,
+        OR: [{ id_pembimbing1: dosenId }, { id_pembimbing2: dosenId }],
       },
     });
 
-    res.status(200).json(update);
+    if (!skripsi) {
+      return res.status(403).json({ message: 'Anda bukan pembimbing mahasiswa ini' });
+    }
+
+    // Tentukan role secara otomatis
+    let role: 'pembimbing1' | 'pembimbing2';
+    if (skripsi.id_pembimbing1 === dosenId) {
+      role = 'pembimbing1';
+    } else if (skripsi.id_pembimbing2 === dosenId) {
+      role = 'pembimbing2';
+    } else {
+      return res.status(403).json({ message: 'Role pembimbing tidak valid' });
+    }
+
+    // Simpan atau update approval
+    const approval = await prisma.approvalSkripsi.upsert({
+      where: {
+        id_mahasiswa_id_dosen_role: {
+          id_mahasiswa: mahasiswaId,
+          id_dosen: dosenId,
+          role,
+        },
+      },
+      update: {
+        status,
+        catatan,
+      },
+      create: {
+        id_mahasiswa: mahasiswaId,
+        id_dosen: dosenId,
+        status,
+        catatan,
+        role,
+      },
+    });
+
+    res.status(200).json({ message: 'Approval berhasil disimpan', approval });
   } catch (error) {
     console.error(error);
-    res.status(500).send('Gagal memperbarui status skripsi.');
+    res.status(500).json({ message: 'Gagal menyimpan approval' });
   }
 };
 
@@ -181,7 +230,7 @@ export const createDosen = async (req: Request, res: Response) => {
     const { nidn, nama, email, password } = req.body;
 
     // Hash password before storing
-    const hashedPassword = password; // Jika Anda menggunakan bcryptjs atau password hashing lainnya, hash di sini
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const newDosen = await prisma.dosen.create({
       data: {
