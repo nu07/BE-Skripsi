@@ -242,13 +242,55 @@ export const getSkripsi = async (req: Request, res: Response) => {
 
 // Daftar sidang (insert PendaftaranSidang)
 export const daftarSidang = async (req: Request, res: Response) => {
-  const { id_skripsi } = req.body;
+  const mahasiswaId = req.userId;
 
   try {
+    // Ambil skripsi mahasiswa berdasarkan ID user
+    const skripsi = await prisma.skripsi.findFirst({
+      where: {
+        id_mahasiswa: mahasiswaId,
+        deletedAt: null,
+      },
+    });
+
+    if (!skripsi) {
+      return res.status(404).json({ message: 'Data skripsi tidak ditemukan.' });
+    }
+
+    // Cek apakah sudah pernah mendaftar sidang
+    const existing = await prisma.pendaftaranSidang.findFirst({
+      where: {
+        id_mahasiswa: mahasiswaId,
+        id_skripsi: skripsi.id,
+      },
+    });
+
+    if (existing) {
+      return res.status(400).json({ message: 'Anda sudah mendaftar sidang sebelumnya.' });
+    }
+
+    // Validasi apakah sudah disetujui oleh pembimbing 1 dan 2
+    const approvals = await prisma.approvalSkripsi.findMany({
+      where: {
+        id_mahasiswa: mahasiswaId,
+        status: 'ACC', // status harus berupa string "ACC" sesuai skema
+      },
+    });
+
+    const rolesAcc = approvals.map((a) => a.role);
+    const isApprovedByBoth = rolesAcc.includes('pembimbing1') && rolesAcc.includes('pembimbing2');
+
+    if (!isApprovedByBoth) {
+      return res.status(400).json({
+        message: 'Skripsi belum disetujui oleh kedua pembimbing.',
+      });
+    }
+
+    // Buat pendaftaran sidang
     const pendaftaran = await prisma.pendaftaranSidang.create({
       data: {
-        id_mahasiswa: req.userId,
-        id_skripsi,
+        id_mahasiswa: mahasiswaId,
+        id_skripsi: skripsi.id,
         status: 'Menunggu',
       },
     });

@@ -83,7 +83,7 @@ model ApprovalSkripsi {
   id           String   @id @default(uuid())
   id_mahasiswa String
   id_dosen     String
-  status       String   // 'ACC' atau 'TOLAK'
+  status       Boolean   // 'true' atau 'false'
   catatan      String?
   role         String   // 'pembimbing1' atau 'pembimbing2'
   createdAt    DateTime @default(now())

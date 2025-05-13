@@ -72,7 +72,7 @@ Table ApprovalSkripsi {
   id String [pk]
   id_mahasiswa String [not null]
   id_dosen String [not null]
-  status String [not null]
+  status Boolean [not null]
   catatan String
   role String [not null]
   createdAt DateTime [default: `now()`, not null]
