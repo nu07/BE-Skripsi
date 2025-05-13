@@ -7,6 +7,6 @@ const router: Router = Router();
 
 router.use('/', adminRoutes);
 router.use('/', mahasiswaRoutes);
-router.use('/', dosenRoutes);
+router.use('/dosen', dosenRoutes);
 
 export default router;
