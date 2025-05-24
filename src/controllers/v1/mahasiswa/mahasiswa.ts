@@ -115,10 +115,9 @@ export const getHasilSidang = async (req: Request, res: Response) => {
       where: {
         id_mahasiswa: req.userId, // Filter berdasarkan id_mahasiswa
       },
-      select: {
-        status: true,
-        catatan: true,
-        tanggal_sidang: true,
+      include: {
+        penguji1: true,
+        penguji2: true,
       },
     });
 
@@ -273,7 +272,7 @@ export const daftarSidang = async (req: Request, res: Response) => {
     const approvals = await prisma.approvalSkripsi.findMany({
       where: {
         id_mahasiswa: mahasiswaId,
-        status: 'ACC', // status harus berupa string "ACC" sesuai skema
+        status: true, // status harus berupa string "ACC" sesuai skema
       },
     });
 
@@ -328,16 +327,15 @@ export const getApprovalHistory = async (req: Request, res: Response) => {
 // Lihat jadwal sidang
 export const getJadwalSidang = async (req: Request, res: Response) => {
   try {
-    const pendaftaran = await prisma.pendaftaranSidang.findFirst({
+    const jadwal = await prisma.pendaftaranSidang.findFirst({
       where: { id_mahasiswa: req.userId as string },
       include: {
-        jadwal: true,
+        penguji1: true,
+        penguji2: true,
       },
     });
 
-    if (!pendaftaran?.jadwal) return res.status(404).send('Jadwal sidang belum ditentukan.');
-
-    res.status(200).json(pendaftaran.jadwal);
+    res.status(200).json(jadwal);
   } catch (error) {
     console.error(error);
     res.status(500).send('Gagal mengambil jadwal sidang.');

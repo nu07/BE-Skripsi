@@ -119,42 +119,61 @@ export const approveSkripsi = async (req: Request, res: Response) => {
 
 // Lihat daftar sidang sebagai penguji
 export const getDaftarSidang = async (req: Request, res: Response) => {
-  const { dosenId } = req.query;
-
+  const dosenId = req.userId as string;
+  console.log(dosenId);
   try {
     const sidang = await prisma.pendaftaranSidang.findMany({
-      where: { id_penguji: dosenId as string },
+      where: {
+        OR: [{ id_penguji1: dosenId }, { id_penguji2: dosenId }],
+      },
       include: {
         mahasiswa: true,
         skripsi: true,
-        jadwal: true,
       },
     });
 
-    res.status(200).json(sidang);
+    res.status(200).json({ data: sidang });
   } catch (error) {
     console.error(error);
     res.status(500).send('Gagal mengambil daftar sidang.');
   }
 };
 
-// Input hasil sidang mahasiswa
-export const inputHasilSidang = async (req: Request, res: Response) => {
-  const { pendaftaranId, status, catatan } = req.body;
+export const inputCatatanPenguji = async (req: Request, res: Response) => {
+  const { pendaftaranId, catatan } = req.body;
+  const dosenId = req.userId as string;
 
   try {
-    const update = await prisma.pendaftaranSidang.update({
+    const sidang = await prisma.pendaftaranSidang.findUnique({
       where: { id: pendaftaranId },
-      data: {
-        status,
-        catatan,
-      },
     });
 
-    res.status(200).json(update);
+    if (!sidang) {
+      return res.status(404).json({ message: 'Data sidang tidak ditemukan.' });
+    }
+
+    let dataUpdate: any = {};
+
+    if (sidang.id_penguji1 === dosenId) {
+      dataUpdate.catatan_penguji1 = catatan;
+    } else if (sidang.id_penguji2 === dosenId) {
+      dataUpdate.catatan_penguji2 = catatan;
+    } else {
+      return res.status(403).json({ message: 'Anda bukan penguji sidang ini.' });
+    }
+
+    const update = await prisma.pendaftaranSidang.update({
+      where: { id: pendaftaranId },
+      data: dataUpdate,
+    });
+
+    res.status(200).json({ message: 'Catatan penguji berhasil disimpan.', data: update });
   } catch (error) {
     console.error(error);
-    res.status(500).send('Gagal menyimpan hasil sidang.');
+    res.status(500).json({
+      message: 'Terjadi Kesalahan',
+      error,
+    });
   }
 };
 

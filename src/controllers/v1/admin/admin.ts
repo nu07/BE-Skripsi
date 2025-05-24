@@ -195,14 +195,15 @@ export const getAllSkripsi = async (req: Request, res: Response) => {
 export const updateSidangByAdmin = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { status, id_penguji, tanggal_sidang } = req.body;
+    const { status, id_penguji1, id_penguji2, tanggal_sidang } = req.body;
 
     // Update status sidang dan atur penguji
     const sidang = await prisma.pendaftaranSidang.update({
       where: { id: id },
       data: {
         status,
-        id_penguji: id_penguji ? id_penguji : null,
+        id_penguji1: id_penguji1 ? id_penguji1 : null,
+        id_penguji2: id_penguji2 ? id_penguji2 : null,
         tanggal_sidang,
       },
     });

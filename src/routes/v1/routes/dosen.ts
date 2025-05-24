@@ -17,8 +17,7 @@ router.post('/approve-skripsi', [authJwt.verifyToken], DosenController.approveSk
 router.get('/sidang', [authJwt.verifyToken], DosenController.getDaftarSidang);
 
 // Input hasil/catatan sidang untuk mahasiswa yang diuji
-router.post('/input-hasil-sidang', [authJwt.verifyToken], DosenController.inputHasilSidang);
-
+router.put('/sidang/catatan', [authJwt.verifyToken], DosenController.inputCatatanPenguji);
 // Lihat berita dari admin
 router.get('/news', DosenController.getNews);
 router.get('/bimbingan/:mahasiswaId', [authJwt.verifyToken], DosenController.getDetailBimbingan);
