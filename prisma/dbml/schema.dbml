@@ -14,6 +14,7 @@ Table Mahasiswa {
   skripsi Skripsi
   pendaftarans PendaftaranSidang [not null]
   deletedAt DateTime
+  approvalSkripsis ApprovalSkripsi [not null]
 }
 
 Table Dosen {
@@ -24,8 +25,10 @@ Table Dosen {
   password String [not null]
   pembimbing1 Skripsi [not null]
   pembimbing2 Skripsi [not null]
-  penguji PendaftaranSidang [not null]
+  penguji1 PendaftaranSidang [not null]
+  penguji2 PendaftaranSidang [not null]
   deletedAt DateTime
+  approvalSkripsis ApprovalSkripsi [not null]
 }
 
 Table Skripsi {
@@ -37,6 +40,10 @@ Table Skripsi {
   buktiPembayaran String
   catatanPembayaran String
   status String
+  acc_pembimbing1 Boolean
+  acc_pembimbing2 Boolean
+  catatan_pembimbing1 String
+  catatan_pembimbing2 String
   mahasiswa Mahasiswa [not null]
   pembimbing1 Dosen
   pembimbing2 Dosen
@@ -53,13 +60,32 @@ Table PendaftaranSidang {
   status String [not null]
   catatan String
   tanggal_sidang DateTime
-  id_penguji String
+  id_penguji1 String
+  id_penguji2 String
+  catatan_penguji1 String
+  catatan_penguji2 String
   mahasiswa Mahasiswa [not null]
   skripsi Skripsi [not null]
-  jadwal JadwalSidang
-  penguji Dosen
+  penguji1 Dosen
+  penguji2 Dosen
   approvalHistories ApprovalHistory [not null]
   deletedAt DateTime
+}
+
+Table ApprovalSkripsi {
+  id String [pk]
+  id_mahasiswa String [not null]
+  id_dosen String [not null]
+  status Boolean [not null]
+  catatan String
+  role String [not null]
+  createdAt DateTime [default: `now()`, not null]
+  mahasiswa Mahasiswa [not null]
+  dosen Dosen [not null]
+
+  indexes {
+    (id_mahasiswa, id_dosen, role) [unique]
+  }
 }
 
 Table ApprovalHistory {
@@ -71,13 +97,6 @@ Table ApprovalHistory {
   tanggal_approval DateTime [default: `now()`, not null]
   pendaftaran PendaftaranSidang [not null]
   admin Admin [not null]
-}
-
-Table JadwalSidang {
-  id String [pk]
-  tanggal DateTime [not null]
-  ruangan String [not null]
-  pendaftarans PendaftaranSidang [not null]
 }
 
 Table Admin {
@@ -110,9 +129,13 @@ Ref: PendaftaranSidang.id_mahasiswa > Mahasiswa.id
 
 Ref: PendaftaranSidang.id_skripsi > Skripsi.id
 
-Ref: PendaftaranSidang.id_jadwal > JadwalSidang.id
+Ref: PendaftaranSidang.id_penguji1 > Dosen.id
 
-Ref: PendaftaranSidang.id_penguji > Dosen.id
+Ref: PendaftaranSidang.id_penguji2 > Dosen.id
+
+Ref: ApprovalSkripsi.id_mahasiswa > Mahasiswa.id
+
+Ref: ApprovalSkripsi.id_dosen > Dosen.id
 
 Ref: ApprovalHistory.id_pendaftaran > PendaftaranSidang.id
 

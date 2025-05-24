@@ -195,14 +195,15 @@ export const getAllSkripsi = async (req: Request, res: Response) => {
 export const updateSidangByAdmin = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { status, id_penguji, tanggal_sidang } = req.body;
+    const { status, id_penguji1, id_penguji2, tanggal_sidang } = req.body;
 
     // Update status sidang dan atur penguji
     const sidang = await prisma.pendaftaranSidang.update({
       where: { id: id },
       data: {
         status,
-        id_penguji: id_penguji ? id_penguji : null,
+        id_penguji1: id_penguji1 ? id_penguji1 : null,
+        id_penguji2: id_penguji2 ? id_penguji2 : null,
         tanggal_sidang,
       },
     });
@@ -223,7 +224,8 @@ export const getCatatanSidang = async (req: Request, res: Response) => {
     const sidang = await prisma.pendaftaranSidang.findUnique({
       where: { id },
       include: {
-        penguji: true,
+        penguji1: true,
+        penguji2: true,
       },
     });
 
@@ -463,86 +465,85 @@ export const deleteNews = async (req: Request, res: Response) => {
   }
 };
 
-export const createJadwalSidang = async (req: Request, res: Response) => {
-  try {
-    const { tanggal, ruangan } = req.body;
+// export const createJadwalSidang = async (req: Request, res: Response) => {
+//   try {
+//     const { tanggal, ruangan } = req.body;
 
-    const jadwal = await prisma.jadwalSidang.create({
-      data: {
-        tanggal,
-        ruangan,
-      },
-    });
+//     const jadwal = await prisma.jadwalSidang.create({
+//       data: {
+//         tanggal,
+//         ruangan,
+//       },
+//     });
 
-    return res.status(201).json(jadwal);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Terjadi kesalahan server.' });
-  }
-};
+//     return res.status(201).json(jadwal);
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({ message: 'Terjadi kesalahan server.' });
+//   }
+// };
 
-export const getAllJadwalSidang = async (req: Request, res: Response) => {
-  try {
-    const jadwals = await prisma.jadwalSidang.findMany();
-    return res.status(200).json(jadwals);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Terjadi kesalahan server.' });
-  }
-};
+// export const getAllJadwalSidang = async (req: Request, res: Response) => {
+//   try {
+//     const jadwals = await prisma.pendaftaranSidang.findMany();
+//     return res.status(200).json(jadwals);
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({ message: 'Terjadi kesalahan server.' });
+//   }
+// };
 
-export const getJadwalSidangById = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const jadwal = await prisma.jadwalSidang.findUnique({
-      where: { id },
-    });
+// export const getJadwalSidangById = async (req: Request, res: Response) => {
+//   try {
+//     const { id } = req.params;
+//     const jadwal = await prisma.pendaftaranSidang.findUnique({
+//       where: { id },
+//     });
 
-    if (!jadwal) {
-      return res.status(404).json({ message: 'Jadwal Sidang tidak ditemukan' });
-    }
+//     if (!jadwal) {
+//       return res.status(404).json({ message: 'Jadwal Sidang tidak ditemukan' });
+//     }
 
-    return res.status(200).json(jadwal);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Terjadi kesalahan server.' });
-  }
-};
+//     return res.status(200).json(jadwal);
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({ message: 'Terjadi kesalahan server.' });
+//   }
+// };
 
-export const updateJadwalSidang = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { tanggal, ruangan } = req.body;
+// export const updateJadwalSidang = async (req: Request, res: Response) => {
+//   try {
+//     const { id } = req.params;
+//     const { tanggal, ruangan } = req.body;
 
-    const updatedJadwal = await prisma.jadwalSidang.update({
-      where: { id },
-      data: {
-        tanggal,
-        ruangan,
-      },
-    });
+//     const updatedJadwal = await prisma.pendaftaranSidang.update({
+//       where: { id },
+//       data: {
+//         tanggal_sidang: tanggal,
+//       },
+//     });
 
-    return res.status(200).json(updatedJadwal);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Terjadi kesalahan server.' });
-  }
-};
+//     return res.status(200).json(updatedJadwal);
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({ message: 'Terjadi kesalahan server.' });
+//   }
+// };
 
-export const deleteJadwalSidang = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
+// export const deleteJadwalSidang = async (req: Request, res: Response) => {
+//   try {
+//     const { id } = req.params;
 
-    await prisma.jadwalSidang.delete({
-      where: { id },
-    });
+//     await prisma.jadwalSidang.delete({
+//       where: { id },
+//     });
 
-    return res.status(200).json({ message: 'Jadwal Sidang berhasil dihapus' });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Terjadi kesalahan server.' });
-  }
-};
+//     return res.status(200).json({ message: 'Jadwal Sidang berhasil dihapus' });
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({ message: 'Terjadi kesalahan server.' });
+//   }
+// };
 
 export const loginAdmin = async (req: Request, res: Response) => {
   try {

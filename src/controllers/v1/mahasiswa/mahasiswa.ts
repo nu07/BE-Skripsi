@@ -115,10 +115,9 @@ export const getHasilSidang = async (req: Request, res: Response) => {
       where: {
         id_mahasiswa: req.userId, // Filter berdasarkan id_mahasiswa
       },
-      select: {
-        status: true,
-        catatan: true,
-        tanggal_sidang: true,
+      include: {
+        penguji1: true,
+        penguji2: true,
       },
     });
 
@@ -242,13 +241,55 @@ export const getSkripsi = async (req: Request, res: Response) => {
 
 // Daftar sidang (insert PendaftaranSidang)
 export const daftarSidang = async (req: Request, res: Response) => {
-  const { id_skripsi } = req.body;
+  const mahasiswaId = req.userId;
 
   try {
+    // Ambil skripsi mahasiswa berdasarkan ID user
+    const skripsi = await prisma.skripsi.findFirst({
+      where: {
+        id_mahasiswa: mahasiswaId,
+        deletedAt: null,
+      },
+    });
+
+    if (!skripsi) {
+      return res.status(404).json({ message: 'Data skripsi tidak ditemukan.' });
+    }
+
+    // Cek apakah sudah pernah mendaftar sidang
+    const existing = await prisma.pendaftaranSidang.findFirst({
+      where: {
+        id_mahasiswa: mahasiswaId,
+        id_skripsi: skripsi.id,
+      },
+    });
+
+    if (existing) {
+      return res.status(400).json({ message: 'Anda sudah mendaftar sidang sebelumnya.' });
+    }
+
+    // Validasi apakah sudah disetujui oleh pembimbing 1 dan 2
+    const approvals = await prisma.approvalSkripsi.findMany({
+      where: {
+        id_mahasiswa: mahasiswaId,
+        status: true, // status harus berupa string "ACC" sesuai skema
+      },
+    });
+
+    const rolesAcc = approvals.map((a) => a.role);
+    const isApprovedByBoth = rolesAcc.includes('pembimbing1') && rolesAcc.includes('pembimbing2');
+
+    if (!isApprovedByBoth) {
+      return res.status(400).json({
+        message: 'Skripsi belum disetujui oleh kedua pembimbing.',
+      });
+    }
+
+    // Buat pendaftaran sidang
     const pendaftaran = await prisma.pendaftaranSidang.create({
       data: {
-        id_mahasiswa: req.userId,
-        id_skripsi,
+        id_mahasiswa: mahasiswaId,
+        id_skripsi: skripsi.id,
         status: 'Menunggu',
       },
     });
@@ -286,16 +327,15 @@ export const getApprovalHistory = async (req: Request, res: Response) => {
 // Lihat jadwal sidang
 export const getJadwalSidang = async (req: Request, res: Response) => {
   try {
-    const pendaftaran = await prisma.pendaftaranSidang.findFirst({
+    const jadwal = await prisma.pendaftaranSidang.findFirst({
       where: { id_mahasiswa: req.userId as string },
       include: {
-        jadwal: true,
+        penguji1: true,
+        penguji2: true,
       },
     });
 
-    if (!pendaftaran?.jadwal) return res.status(404).send('Jadwal sidang belum ditentukan.');
-
-    res.status(200).json(pendaftaran.jadwal);
+    res.status(200).json(jadwal);
   } catch (error) {
     console.error(error);
     res.status(500).send('Gagal mengambil jadwal sidang.');
