@@ -44,11 +44,11 @@ router.delete('/news/:id', [authJwt.verifyToken], AdminController.deleteNews);
 
 // jadwal sidang
 
-router.post('/jadwal', [authJwt.verifyToken], AdminController.createJadwalSidang);
-router.get('/jadwal', [authJwt.verifyToken], AdminController.getAllJadwalSidang);
-router.get('/jadwal/:id', [authJwt.verifyToken], AdminController.getJadwalSidangById);
-router.put('/jadwal/:id', [authJwt.verifyToken], AdminController.updateJadwalSidang);
-router.delete('/jadwal/:id', [authJwt.verifyToken], AdminController.deleteJadwalSidang);
+// router.post('/jadwal', [authJwt.verifyToken], AdminController.createJadwalSidang);
+// router.get('/jadwal', [authJwt.verifyToken], AdminController.getAllJadwalSidang);
+// router.get('/jadwal/:id', [authJwt.verifyToken], AdminController.getJadwalSidangById);
+// router.put('/jadwal/:id', [authJwt.verifyToken], AdminController.updateJadwalSidang);
+// router.delete('/jadwal/:id', [authJwt.verifyToken], AdminController.deleteJadwalSidang);
 
 // . Validasi dan Otentikasi
 router.post('/login', AdminController.loginAdmin);
