@@ -1,34 +1,41 @@
-name: TypeScript CI
+name: Continuous Deployment Skripsi BE
 
 on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  building:
+    runs-on: self-hosted
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '20.11.0'
+      - name: Authentication
+        uses: actions/checkout@v3
+        env:
+          HOST: ${{ secrets.HOST }}
+          USERNAME: ${{ secrets.USERNAME }}
+          PORT: ${{ secrets.PORT }}
+          KEY: ${{ secrets.SSHKEY }}
+      # RUN already local triggers
+  build-backend:
+    runs-on: self-hosted
+    needs: building
+    steps:
+      - uses: actions/checkout@v3
 
-      - name: Install pnpm
-        run: npm install -g pnpm
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Generate Prisma Module
-        run: pnpm prisma generate
-
-      - name: Build
-        run: pnpm run build
+      - name: Authentication
+        uses: actions/checkout@v3
+        env:
+          HOST: ${{ secrets.HOST }}
+          USERNAME: ${{ secrets.USERNAME }}
+          PORT: ${{ secrets.PORT }}
+          KEY: ${{ secrets.SSHKEY }}
+      # RUN already local triggers
+      - run: |
+          cd /root/web/private-nu/BE-Skripsi
+          git reset --hard
+          git pull origin main
+          sudo docker compose -f docker-compose-prod.yml up --build --force-recreate --no-deps -d
