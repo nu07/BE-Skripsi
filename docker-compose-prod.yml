@@ -8,7 +8,7 @@ services:
     container_name: Backend-lsp
     restart: unless-stopped
     ports:
-      - '14045:1921'
+      - '1921:14045'
     networks:
       - website-discord-kelbuk_default
 
