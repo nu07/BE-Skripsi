@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es2020",
     "lib": ["es2020"],
-    "typeRoots": ["src/types", "node_modules/@types"],
+    "typeRoots": ["./node_modules/@types"],
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
