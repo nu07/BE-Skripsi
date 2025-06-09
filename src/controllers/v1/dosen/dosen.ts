@@ -27,11 +27,16 @@ export const login = async (req: Request, res: Response) => {
 
     delete dosen.password;
 
+    const valuesDosen = {
+      ...dosen,
+      role: 'dosen',
+    };
+
     return res.status(200).json({
       message: 'Login berhasil',
       token: token,
       status: 200,
-      data: dosen,
+      data: valuesDosen,
     });
   } catch (error) {
     console.error(error);
@@ -41,7 +46,7 @@ export const login = async (req: Request, res: Response) => {
 
 // Daftar mahasiswa bimbingan (baik pembimbing1 atau pembimbing2)
 export const getDaftarBimbingan = async (req: Request, res: Response) => {
-  const { dosenId } = req.query;
+  const dosenId = req.userId;
 
   try {
     const bimbingan = await prisma.skripsi.findMany({
@@ -120,7 +125,6 @@ export const approveSkripsi = async (req: Request, res: Response) => {
 // Lihat daftar sidang sebagai penguji
 export const getDaftarSidang = async (req: Request, res: Response) => {
   const dosenId = req.userId as string;
-  console.log(dosenId);
   try {
     const sidang = await prisma.pendaftaranSidang.findMany({
       where: {

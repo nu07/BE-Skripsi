@@ -237,7 +237,7 @@ export const getCatatanSidang = async (req: Request, res: Response) => {
 };
 
 export const createAdmin = async (req: Request, res: Response) => {
-  const { username, password, nama } = req.body;
+  const { email, password, nama } = req.body;
 
   try {
     // Hash password yang diterima dari request
@@ -246,7 +246,7 @@ export const createAdmin = async (req: Request, res: Response) => {
     // Buat admin baru di database
     const admin = await prisma.admin.create({
       data: {
-        username,
+        email,
         password: hashedPassword,
         nama,
       },
@@ -293,7 +293,7 @@ export const getAdminById = async (req: Request, res: Response) => {
 // Update Admin
 export const updateAdmin = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { username, password, nama } = req.body;
+  const { email, password, nama } = req.body;
 
   try {
     // Hash password yang baru
@@ -302,7 +302,7 @@ export const updateAdmin = async (req: Request, res: Response) => {
     const updatedAdmin = await prisma.admin.update({
       where: { id },
       data: {
-        username,
+        email,
         password: hashedPassword,
         nama,
       },
@@ -547,10 +547,10 @@ export const deleteNews = async (req: Request, res: Response) => {
 
 export const loginAdmin = async (req: Request, res: Response) => {
   try {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
 
     const admin = await prisma.admin.findUnique({
-      where: { username },
+      where: { email },
     });
 
     if (!admin) {
@@ -569,12 +569,16 @@ export const loginAdmin = async (req: Request, res: Response) => {
     });
 
     delete admin.password;
+    const valuesAdmin = {
+      ...admin,
+      role: 'admin',
+    };
 
     return res.status(200).json({
       message: 'Login berhasil',
       token: token,
       status: 200,
-      data: admin,
+      data: valuesAdmin,
     });
   } catch (error) {
     console.error(error);
