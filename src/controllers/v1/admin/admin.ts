@@ -405,12 +405,30 @@ export const createNews = async (req: Request, res: Response) => {
 
 export const getAllNews = async (req: Request, res: Response) => {
   try {
-    const news = await prisma.news.findMany({
-      include: {
-        admin: true,
-      },
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const [news, total] = await Promise.all([
+      prisma.news.findMany({
+        skip,
+        take: limit,
+        include: {
+          admin: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      prisma.news.count(),
+    ]);
+
+    return res.status(200).json({
+      data: news,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
     });
-    return res.status(200).json(news);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Terjadi kesalahan server.' });
