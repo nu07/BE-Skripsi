@@ -385,13 +385,14 @@ export const getApprovalHistoryById = async (req: Request, res: Response) => {
 
 export const createNews = async (req: Request, res: Response) => {
   try {
-    const { title, content, id_admin } = req.body;
+    const { title, content } = req.body;
+    const userId = req.userId;
 
     const news = await prisma.news.create({
       data: {
         title,
         content,
-        id_admin,
+        id_admin: userId,
       },
     });
 
@@ -404,7 +405,11 @@ export const createNews = async (req: Request, res: Response) => {
 
 export const getAllNews = async (req: Request, res: Response) => {
   try {
-    const news = await prisma.news.findMany();
+    const news = await prisma.news.findMany({
+      include: {
+        admin: true,
+      },
+    });
     return res.status(200).json(news);
   } catch (error) {
     console.error(error);
