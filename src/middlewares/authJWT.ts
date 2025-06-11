@@ -6,10 +6,8 @@ const verifyToken = (req: Request, res: Response, next: NextFunction) => {
   try {
     let authHeader = req.headers['authorization'];
     const token = authHeader?.split(' ')[1];
-
-    jwt.verify(token, process.env.jwt_secret_key, (_err: any, decoded: any) => {
-      // console.log(decoded);
-      req.userId = decoded.data.id;
+    jwt.verify(token, process.env.jwt_secret_key, (err: any, decoded: any) => {
+      req.userId = decoded.id;
       next();
     });
   } catch (e) {
