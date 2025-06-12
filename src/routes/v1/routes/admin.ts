@@ -38,7 +38,7 @@ router.get('/approval-history/:id', [authJwt.verifyToken], AdminController.getAp
 // berita
 router.post('/news', [authJwt.verifyToken], AdminController.createNews);
 router.get('/news', AdminController.getAllNews);
-router.get('/news/:id', [authJwt.verifyToken], AdminController.getNewsById);
+router.get('/news/:id', AdminController.getNewsById);
 router.put('/news/:id', [authJwt.verifyToken], AdminController.updateNews);
 router.delete('/news/:id', [authJwt.verifyToken], AdminController.deleteNews);
 

@@ -440,6 +440,9 @@ export const getNewsById = async (req: Request, res: Response) => {
     const { id } = req.params;
     const news = await prisma.news.findUnique({
       where: { id },
+      include: {
+        admin : true
+      }
     });
 
     if (!news) {
