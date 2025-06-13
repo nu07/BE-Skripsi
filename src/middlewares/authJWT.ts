@@ -7,7 +7,7 @@ const verifyToken = (req: Request, res: Response, next: NextFunction) => {
     let authHeader = req.headers['authorization'];
     const token = authHeader?.split(' ')[1];
     jwt.verify(token, process.env.jwt_secret_key, (err: any, decoded: any) => {
-      req.userId = decoded.id;
+      req.userId = decoded.data.id;
       next();
     });
   } catch (e) {

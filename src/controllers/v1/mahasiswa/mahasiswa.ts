@@ -46,9 +46,16 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const getStatus = async (req: Request, res: Response) => {
+ 
+ console.log('userid : ', req.userId)
   try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized: ID tidak ditemukan di token.' });
+    }
+
     const mahasiswa = await prisma.mahasiswa.findUnique({
-      where: { id: req.userId },
+      where: { id: userId },
       select: {
         isEligibleForSkripsi: true,
         isEligibleForSidang: true,
@@ -57,34 +64,33 @@ export const getStatus = async (req: Request, res: Response) => {
     });
 
     if (!mahasiswa) {
-      return res.status(404).send('Mahasiswa tidak ditemukan.');
+      return res.status(404).json({ message: 'Mahasiswa tidak ditemukan.' });
     }
+
     const data = {
       isEligibleForSkripsi: mahasiswa.isEligibleForSkripsi,
       isEligibleForSidang: mahasiswa.isEligibleForSidang,
       catatanSkripsi: mahasiswa.catatanSkripsi,
     };
-    if (mahasiswa.isEligibleForSkripsi) {
-      res.status(200).json({
-        message: 'Selamat Anda Di Nyatakan Layar Mengikuti Skripsi',
-        data: data,
-        status: 200,
-      });
-    } else {
-      res.status(200).json({
-        message: 'Mohon Maaf Anda Belum Berhak Mengikut Skripsi',
-        data,
-        status: 200,
-      });
-    }
+
+    const message = mahasiswa.isEligibleForSkripsi
+      ? 'Selamat, Anda dinyatakan layak mengikuti skripsi.'
+      : 'Mohon maaf, Anda belum memenuhi syarat untuk mengikuti skripsi.';
+
+    return res.status(200).json({
+      message,
+      data,
+      status: 200,
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
-      message: 'error',
-      error,
+    return res.status(500).json({
+      message: 'Terjadi kesalahan server.',
+      error: error instanceof Error ? error.message : error,
     });
   }
 };
+
 
 export const uploadBuktiPembayaran = async (req: Request, res: Response) => {
   const file = req.file?.buktiPembayaran; // Middleware untuk file upload

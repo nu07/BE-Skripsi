@@ -21,17 +21,18 @@ export const login = async (req: Request, res: Response) => {
         return res.status(401).json({ message: 'Password salah.' });
       }
 
-      const token = jwt.sign(
-        { id: admin.id, role: 'admin' },
-        process.env.jwt_secret_key!,
-        { expiresIn: 86400 }, // 24 jam
-      );
-
       delete (admin as any).password;
       const valuesAdmin = {
         ...admin,
         role: 'admin',
       };
+
+      const token = jwt.sign(
+        { data: valuesAdmin },
+        process.env.jwt_secret_key!,
+        { expiresIn: 86400 }
+      );
+
       return res.status(200).json({
         message: 'Login berhasil',
         token,
@@ -39,6 +40,7 @@ export const login = async (req: Request, res: Response) => {
         data: valuesAdmin,
       });
     }
+    
 
     // 2. Cek Dosen
     const dosen = await prisma.dosen.findUnique({ where: { email } });
@@ -48,19 +50,21 @@ export const login = async (req: Request, res: Response) => {
         return res.status(401).json({ message: 'Password salah.' });
       }
 
-      const token = jwt.sign({ id: dosen.id, role: 'dosen' }, process.env.jwt_secret_key!, { expiresIn: 86400 });
-
       delete (dosen as any).password;
-
       const valuesDosen = {
         ...dosen,
         role: 'dosen',
       };
 
+      const token = jwt.sign(
+        { data: valuesDosen },
+        process.env.jwt_secret_key!,
+        { expiresIn: 86400 }
+      );
+
       return res.status(200).json({
         message: 'Login berhasil',
         token,
-        role: 'dosen',
         status: 200,
         data: valuesDosen,
       });
@@ -74,28 +78,26 @@ export const login = async (req: Request, res: Response) => {
         return res.status(401).json({ message: 'Password salah.' });
       }
 
-      const token = jwt.sign({ id: mahasiswa.id, role: 'mahasiswa' }, process.env.jwt_secret_key!, {
-        expiresIn: 86400,
-      });
-
       delete (mahasiswa as any).password;
-
-
       const valuesMahasiswa = {
         ...mahasiswa,
         role: 'mahasiswa',
       };
 
+      const token = jwt.sign(
+        { data: valuesMahasiswa },
+        process.env.jwt_secret_key!,
+        { expiresIn: 86400 }
+      );
+
       return res.status(200).json({
         message: 'Login berhasil',
         token,
-        role: 'mahasiswa',
         status: 200,
         data: valuesMahasiswa,
       });
     }
 
-    // Jika tidak ditemukan
     return res.status(404).json({ message: 'Pengguna tidak ditemukan.' });
   } catch (error) {
     console.error(error);
