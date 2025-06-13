@@ -27,7 +27,7 @@ router.post(
   MahasiswaController.uploadBuktiPembayaranSkripsi,
 );
 
-router.get('/skripsi', [authJwt.verifyToken], MahasiswaController.getSkripsi);
+router.get('/skripsi-me', [authJwt.verifyToken], MahasiswaController.getSkripsi);
 
 router.post('/daftar-sidang', [authJwt.verifyToken], MahasiswaController.daftarSidang);
 
