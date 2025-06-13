@@ -282,17 +282,17 @@ export const getAllSkripsi = async (req: Request, res: Response) => {
         skip,
         take: limit,
         orderBy: [
-          { 
-            status: 'asc' // secara default "pending" < "gagal" < "sukses"
+          {
+            status: 'asc', // secara default "pending" < "gagal" < "sukses"
           },
-          { 
-            mahasiswa: { nama: 'asc' } 
+          {
+            mahasiswa: { nama: 'asc' },
           },
         ],
         include: {
           mahasiswa: true,
           pembimbing1: true,
-          pembimbing2: true
+          pembimbing2: true,
         },
       }),
       prisma.skripsi.count({ where: whereClause }),
@@ -313,8 +313,6 @@ export const getAllSkripsi = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Gagal mengambil daftar skripsi' });
   }
 };
-
-
 
 // 7. ACC / Tolak Sidang + Atur Penguji
 export const updateSidangByAdmin = async (req: Request, res: Response) => {
@@ -548,7 +546,6 @@ export const updateAdmin = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Gagal memperbarui admin.' });
   }
 };
-
 
 // Hapus Admin
 export const deleteAdmin = async (req: Request, res: Response) => {
