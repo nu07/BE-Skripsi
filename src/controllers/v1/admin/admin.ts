@@ -407,7 +407,7 @@ export const getAllNews = async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
-    const search = (req.query.search as string) || "";
+    const search = (req.query.search as string) || '';
 
     const skip = (page - 1) * limit;
 
@@ -417,13 +417,13 @@ export const getAllNews = async (req: Request, res: Response) => {
             {
               title: {
                 contains: search,
-                mode: "insensitive",
+                mode: 'insensitive',
               },
             },
             {
               content: {
                 contains: search,
-                mode: "insensitive",
+                mode: 'insensitive',
               },
             },
           ],
@@ -434,7 +434,7 @@ export const getAllNews = async (req: Request, res: Response) => {
       prisma.news.findMany({
         skip,
         take: limit,
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
         where: whereClause,
         include: {
           admin: true,
@@ -454,7 +454,7 @@ export const getAllNews = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Terjadi kesalahan server." });
+    return res.status(500).json({ message: 'Terjadi kesalahan server.' });
   }
 };
 

@@ -275,14 +275,14 @@ export const getAllDosen = async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
-    const search = (req.query.search as string) || "";
+    const search = (req.query.search as string) || '';
     const skip = (page - 1) * limit;
 
-   const whereClause: Prisma.DosenWhereInput = {};
-       if (search) {
+    const whereClause: Prisma.DosenWhereInput = {};
+    if (search) {
       whereClause.OR = [
-        { nama: { contains: search, mode: "insensitive" } },
-        { nidn: { contains: search, mode: "insensitive" } },
+        { nama: { contains: search, mode: 'insensitive' } },
+        { nidn: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -291,7 +291,7 @@ export const getAllDosen = async (req: Request, res: Response) => {
         where: whereClause,
         skip,
         take: limit,
-        orderBy: { nama: "asc" },
+        orderBy: { nama: 'asc' },
         select: {
           id: true,
           nama: true,
@@ -304,7 +304,7 @@ export const getAllDosen = async (req: Request, res: Response) => {
     ]);
 
     return res.status(200).json({
-      message: "Daftar dosen berhasil diambil",
+      message: 'Daftar dosen berhasil diambil',
       data: dosenList,
       pagination: {
         total,
@@ -315,9 +315,9 @@ export const getAllDosen = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Gagal mengambil daftar dosen" });
+    return res.status(500).json({ message: 'Gagal mengambil daftar dosen' });
   }
-}
+};
 
 // READ (BY ID)
 export const getDosenById = async (req: Request, res: Response) => {
@@ -344,22 +344,27 @@ export const updateDosen = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { nidn, nama, email, password } = req.body;
 
-    // Hash password before updating (if updated)
-    const hashedPassword = password ? password : undefined;
+    const dataToUpdate: any = {
+      nidn,
+      nama,
+      email,
+    };
+
+    // Jika password tidak kosong, hash dan masukkan ke update
+    if (password && password.trim() !== "") {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      dataToUpdate.password = hashedPassword;
+    }
 
     const updated = await prisma.dosen.update({
       where: { id },
-      data: {
-        nidn,
-        nama,
-        email,
-        password: hashedPassword ? hashedPassword : undefined,
-      },
+      data: dataToUpdate,
     });
 
-    res.status(200).json({ message: 'Dosen berhasil diupdate', data: updated });
+    res.status(200).json({ message: "Dosen berhasil diupdate", data: updated });
   } catch (error) {
-    res.status(500).json({ message: 'Gagal mengupdate dosen' });
+    console.error(error);
+    res.status(500).json({ message: "Gagal mengupdate dosen" });
   }
 };
 
