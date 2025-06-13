@@ -80,12 +80,18 @@ export const login = async (req: Request, res: Response) => {
 
       delete (mahasiswa as any).password;
 
+
+      const valuesMahasiswa = {
+        ...mahasiswa,
+        role: 'mahasiswa',
+      };
+
       return res.status(200).json({
         message: 'Login berhasil',
         token,
         role: 'mahasiswa',
         status: 200,
-        data: mahasiswa,
+        data: valuesMahasiswa,
       });
     }
 

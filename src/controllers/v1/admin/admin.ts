@@ -10,21 +10,32 @@ export const createMahasiswa = async (req: Request, res: Response) => {
   try {
     const { nim, nama, email, password, isEligibleForSkripsi = true } = req.body;
 
-    // Validasi jika nim atau email sudah ada
-    const existingMahasiswa = await prisma.mahasiswa.findUnique({
+    // Cek apakah NIM sudah ada di Mahasiswa
+    const existingMahasiswaNim = await prisma.mahasiswa.findUnique({
       where: { nim },
     });
 
-    if (existingMahasiswa) {
+    if (existingMahasiswaNim) {
       return res.status(400).json({ message: 'NIM sudah terdaftar.' });
     }
 
-    const existingEmail = await prisma.mahasiswa.findUnique({
+    // Cek apakah email sudah ada di Mahasiswa
+    const existingMahasiswaEmail = await prisma.mahasiswa.findUnique({
       where: { email },
     });
 
-    if (existingEmail) {
-      return res.status(400).json({ message: 'Email sudah terdaftar.' });
+    // Cek apakah email sudah ada di Dosen
+    const existingDosenEmail = await prisma.dosen.findUnique({
+      where: { email },
+    });
+
+    // Cek apakah email sudah ada di Admin
+    const existingAdminEmail = await prisma.admin.findUnique({
+      where: { email },
+    });
+
+    if (existingMahasiswaEmail || existingDosenEmail || existingAdminEmail) {
+      return res.status(400).json({ message: 'Email sudah terdaftar di sistem.' });
     }
 
     // Hash password menggunakan bcrypt
@@ -48,15 +59,74 @@ export const createMahasiswa = async (req: Request, res: Response) => {
   }
 };
 
+
 export const getAllMahasiswa = async (req: Request, res: Response) => {
   try {
-    const mahasiswa = await prisma.mahasiswa.findMany(); // Mendapatkan semua admin
-    res.status(200).json(mahasiswa);
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const search = (req.query.search as string) || '';
+    const showDeleted = req.query.showDeleted === 'true';
+    const skip = (page - 1) * limit;
+
+    const whereClause: Prisma.MahasiswaWhereInput = {};
+
+    // Jika showDeleted = false, filter hanya yang belum dihapus
+    if (!showDeleted) {
+      whereClause.deletedAt = null;
+    }
+
+    // Jika ada query pencarian
+    if (search) {
+      whereClause.OR = [
+        { nama: { contains: search, mode: 'insensitive' } },
+        { nim: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    // Ambil data mahasiswa dan total count untuk pagination
+    const [mahasiswaList, total] = await Promise.all([
+      prisma.mahasiswa.findMany({
+        where: whereClause,
+        skip,
+        take: limit,
+        orderBy: { nama: 'asc' },
+        select: {
+          id: true,
+          nama: true,
+          nim: true,
+          email: true,
+          deletedAt: true,
+          isEligibleForSkripsi: true,
+          isEligibleForSidang: true,
+          catatanSkripsi: true,
+          skripsi: true,
+          pendaftarans: true,
+          approvalSkripsis: true,
+          // password tidak disertakan
+        },
+      }),
+      prisma.mahasiswa.count({
+        where: whereClause,
+      }),
+    ]);
+
+    return res.status(200).json({
+      message: 'Daftar mahasiswa berhasil diambil',
+      data: mahasiswaList,
+      pagination: {
+        total,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        limit,
+      },
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to fetch admins' });
+    console.error("Error getAllMahasiswa:", error);
+    return res.status(500).json({ message: 'Gagal mengambil daftar mahasiswa' });
   }
 };
+
 
 export const getMahasiswaById = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -81,7 +151,7 @@ export const getMahasiswaById = async (req: Request, res: Response) => {
 export const updateMahasiswa = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { nama, email, password } = req.body;
+    const { nama, email, password,isEligibleForSkripsi } = req.body;
 
     // Update mahasiswa
     const mahasiswa = await prisma.mahasiswa.update({
@@ -90,6 +160,7 @@ export const updateMahasiswa = async (req: Request, res: Response) => {
         nama,
         email,
         password: password ? await bcrypt.hash(password, 10) : undefined,
+        isEligibleForSkripsi
       },
     });
 
@@ -413,21 +484,21 @@ export const getAllNews = async (req: Request, res: Response) => {
 
     const whereClause: Prisma.NewsWhereInput = search
       ? {
-          OR: [
-            {
-              title: {
-                contains: search,
-                mode: 'insensitive',
-              },
+        OR: [
+          {
+            title: {
+              contains: search,
+              mode: 'insensitive',
             },
-            {
-              content: {
-                contains: search,
-                mode: 'insensitive',
-              },
+          },
+          {
+            content: {
+              contains: search,
+              mode: 'insensitive',
             },
-          ],
-        }
+          },
+        ],
+      }
       : {};
 
     const [news, total] = await Promise.all([

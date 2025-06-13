@@ -5,7 +5,6 @@ import jwt from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
 
-
 // Login dosen
 export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
@@ -256,10 +255,7 @@ export const createDosen = async (req: Request, res: Response) => {
     // Cek apakah NIDN atau email sudah digunakan di tabel dosen
     const existingDosen = await prisma.dosen.findFirst({
       where: {
-        OR: [
-          { nidn },
-          { email },
-        ],
+        OR: [{ nidn }, { email }],
       },
     });
 
@@ -316,8 +312,6 @@ export const createDosen = async (req: Request, res: Response) => {
   }
 };
 
-
-
 export const getAllDosen = async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
@@ -360,7 +354,7 @@ export const getAllDosen = async (req: Request, res: Response) => {
     // Kosongkan password di response
     const sanitizedData = dosenList.map((dosen) => ({
       ...dosen,
-      password: "",
+      password: '',
     }));
 
     return res.status(200).json({
@@ -378,7 +372,6 @@ export const getAllDosen = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Gagal mengambil daftar dosen' });
   }
 };
-
 
 // READ (BY ID)
 export const getDosenById = async (req: Request, res: Response) => {
@@ -411,10 +404,7 @@ export const updateDosen = async (req: Request, res: Response) => {
         AND: [
           { id: { not: id } },
           {
-            OR: [
-              { nidn },
-              { email },
-            ],
+            OR: [{ nidn }, { email }],
           },
         ],
       },
@@ -481,9 +471,6 @@ export const updateDosen = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Gagal mengupdate dosen' });
   }
 };
-
-
-
 
 // DELETE (Soft delete)
 export const deleteDosen = async (req: Request, res: Response) => {
