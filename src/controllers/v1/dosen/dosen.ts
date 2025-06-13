@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
 
+
 // Login dosen
 export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
@@ -252,7 +253,48 @@ export const createDosen = async (req: Request, res: Response) => {
   try {
     const { nidn, nama, email, password } = req.body;
 
-    // Hash password before storing
+    // Cek apakah NIDN atau email sudah digunakan di tabel dosen
+    const existingDosen = await prisma.dosen.findFirst({
+      where: {
+        OR: [
+          { nidn },
+          { email },
+        ],
+      },
+    });
+
+    // Cek email di tabel admin
+    const existingAdmin = await prisma.admin.findUnique({
+      where: { email },
+    });
+
+    // Cek email di tabel mahasiswa
+    const existingMahasiswa = await prisma.mahasiswa.findUnique({
+      where: { email },
+    });
+
+    if (existingDosen) {
+      return res.status(400).json({
+        message:
+          existingDosen.nidn === nidn
+            ? 'NIDN sudah terdaftar oleh dosen lain'
+            : 'Email sudah terdaftar oleh dosen lain',
+      });
+    }
+
+    if (existingAdmin) {
+      return res.status(400).json({
+        message: 'Email sudah terdaftar oleh admin',
+      });
+    }
+
+    if (existingMahasiswa) {
+      return res.status(400).json({
+        message: 'Email sudah terdaftar oleh mahasiswa',
+      });
+    }
+
+    // Hash password sebelum disimpan
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newDosen = await prisma.dosen.create({
@@ -264,12 +306,17 @@ export const createDosen = async (req: Request, res: Response) => {
       },
     });
 
-    res.status(201).json({ message: 'Dosen berhasil ditambahkan', data: newDosen });
+    return res.status(201).json({
+      message: 'Dosen berhasil ditambahkan',
+      data: newDosen,
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Gagal menambahkan dosen' });
+    return res.status(500).json({ message: 'Gagal menambahkan dosen' });
   }
 };
+
+
 
 export const getAllDosen = async (req: Request, res: Response) => {
   try {
@@ -277,8 +324,14 @@ export const getAllDosen = async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 10;
     const search = (req.query.search as string) || '';
     const skip = (page - 1) * limit;
+    const showDeleted = req.query.showDeleted === 'true';
 
     const whereClause: Prisma.DosenWhereInput = {};
+
+    if (!showDeleted) {
+      whereClause.deletedAt = null;
+    }
+
     if (search) {
       whereClause.OR = [
         { nama: { contains: search, mode: 'insensitive' } },
@@ -297,15 +350,22 @@ export const getAllDosen = async (req: Request, res: Response) => {
           nama: true,
           nidn: true,
           email: true,
-          // password dan relasi disembunyikan, bisa ditambahkan kalau perlu
+          deletedAt: true,
+          password: true, // ambil password untuk disetel ke "" nanti
         },
       }),
       prisma.dosen.count({ where: whereClause }),
     ]);
 
+    // Kosongkan password di response
+    const sanitizedData = dosenList.map((dosen) => ({
+      ...dosen,
+      password: "",
+    }));
+
     return res.status(200).json({
       message: 'Daftar dosen berhasil diambil',
-      data: dosenList,
+      data: sanitizedData,
       pagination: {
         total,
         currentPage: page,
@@ -318,6 +378,7 @@ export const getAllDosen = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Gagal mengambil daftar dosen' });
   }
 };
+
 
 // READ (BY ID)
 export const getDosenById = async (req: Request, res: Response) => {
@@ -342,7 +403,57 @@ export const getDosenById = async (req: Request, res: Response) => {
 export const updateDosen = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { nidn, nama, email, password } = req.body;
+    const { nidn, nama, email, password, restore } = req.body;
+
+    // Cek jika email atau nidn sudah digunakan oleh dosen lain
+    const existingDosen = await prisma.dosen.findFirst({
+      where: {
+        AND: [
+          { id: { not: id } },
+          {
+            OR: [
+              { nidn },
+              { email },
+            ],
+          },
+        ],
+      },
+    });
+
+    // Cek ke tabel admin
+    const existingAdmin = await prisma.admin.findFirst({
+      where: {
+        email,
+      },
+    });
+
+    // Cek ke tabel mahasiswa
+    const existingMahasiswa = await prisma.mahasiswa.findFirst({
+      where: {
+        email,
+      },
+    });
+
+    if (existingDosen) {
+      return res.status(400).json({
+        message:
+          existingDosen.nidn === nidn
+            ? 'NIDN sudah digunakan oleh dosen lain'
+            : 'Email sudah digunakan oleh dosen lain',
+      });
+    }
+
+    if (existingAdmin) {
+      return res.status(400).json({
+        message: 'Email sudah digunakan oleh admin',
+      });
+    }
+
+    if (existingMahasiswa) {
+      return res.status(400).json({
+        message: 'Email sudah digunakan oleh mahasiswa',
+      });
+    }
 
     const dataToUpdate: any = {
       nidn,
@@ -350,10 +461,13 @@ export const updateDosen = async (req: Request, res: Response) => {
       email,
     };
 
-    // Jika password tidak kosong, hash dan masukkan ke update
-    if (password && password.trim() !== "") {
+    if (password && password.trim() !== '') {
       const hashedPassword = await bcrypt.hash(password, 10);
       dataToUpdate.password = hashedPassword;
+    }
+
+    if (restore === true) {
+      dataToUpdate.deletedAt = null;
     }
 
     const updated = await prisma.dosen.update({
@@ -361,12 +475,15 @@ export const updateDosen = async (req: Request, res: Response) => {
       data: dataToUpdate,
     });
 
-    res.status(200).json({ message: "Dosen berhasil diupdate", data: updated });
+    return res.status(200).json({ message: 'Dosen berhasil diupdate', data: updated });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Gagal mengupdate dosen" });
+    return res.status(500).json({ message: 'Gagal mengupdate dosen' });
   }
 };
+
+
+
 
 // DELETE (Soft delete)
 export const deleteDosen = async (req: Request, res: Response) => {
