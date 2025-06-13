@@ -766,9 +766,9 @@ export const getAllPendaftaranSidang = async (req: Request, res: Response) => {
         { catatan: { contains: search, mode: 'insensitive' } },
         {
           mahasiswa: {
-            nama: { contains: search, mode: 'insensitive' }
-          }
-        }
+            nama: { contains: search, mode: 'insensitive' },
+          },
+        },
       ];
     }
 
