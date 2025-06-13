@@ -46,8 +46,6 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const getStatus = async (req: Request, res: Response) => {
- 
- console.log('userid : ', req.userId)
   try {
     const userId = req.userId;
     if (!userId) {
@@ -90,7 +88,6 @@ export const getStatus = async (req: Request, res: Response) => {
     });
   }
 };
-
 
 export const uploadBuktiPembayaran = async (req: Request, res: Response) => {
   const file = req.file?.buktiPembayaran; // Middleware untuk file upload

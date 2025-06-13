@@ -27,11 +27,7 @@ export const login = async (req: Request, res: Response) => {
         role: 'admin',
       };
 
-      const token = jwt.sign(
-        { data: valuesAdmin },
-        process.env.jwt_secret_key!,
-        { expiresIn: 86400 }
-      );
+      const token = jwt.sign({ data: valuesAdmin }, process.env.jwt_secret_key!, { expiresIn: 86400 });
 
       return res.status(200).json({
         message: 'Login berhasil',
@@ -40,7 +36,6 @@ export const login = async (req: Request, res: Response) => {
         data: valuesAdmin,
       });
     }
-    
 
     // 2. Cek Dosen
     const dosen = await prisma.dosen.findUnique({ where: { email } });
@@ -56,11 +51,7 @@ export const login = async (req: Request, res: Response) => {
         role: 'dosen',
       };
 
-      const token = jwt.sign(
-        { data: valuesDosen },
-        process.env.jwt_secret_key!,
-        { expiresIn: 86400 }
-      );
+      const token = jwt.sign({ data: valuesDosen }, process.env.jwt_secret_key!, { expiresIn: 86400 });
 
       return res.status(200).json({
         message: 'Login berhasil',
@@ -84,11 +75,7 @@ export const login = async (req: Request, res: Response) => {
         role: 'mahasiswa',
       };
 
-      const token = jwt.sign(
-        { data: valuesMahasiswa },
-        process.env.jwt_secret_key!,
-        { expiresIn: 86400 }
-      );
+      const token = jwt.sign({ data: valuesMahasiswa }, process.env.jwt_secret_key!, { expiresIn: 86400 });
 
       return res.status(200).json({
         message: 'Login berhasil',

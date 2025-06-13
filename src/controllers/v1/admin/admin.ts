@@ -59,7 +59,6 @@ export const createMahasiswa = async (req: Request, res: Response) => {
   }
 };
 
-
 export const getAllMahasiswa = async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
@@ -122,11 +121,10 @@ export const getAllMahasiswa = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error("Error getAllMahasiswa:", error);
+    console.error('Error getAllMahasiswa:', error);
     return res.status(500).json({ message: 'Gagal mengambil daftar mahasiswa' });
   }
 };
-
 
 export const getMahasiswaById = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -151,7 +149,7 @@ export const getMahasiswaById = async (req: Request, res: Response) => {
 export const updateMahasiswa = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { nama, email, password,isEligibleForSkripsi } = req.body;
+    const { nama, email, password, isEligibleForSkripsi } = req.body;
 
     // Update mahasiswa
     const mahasiswa = await prisma.mahasiswa.update({
@@ -160,7 +158,7 @@ export const updateMahasiswa = async (req: Request, res: Response) => {
         nama,
         email,
         password: password ? await bcrypt.hash(password, 10) : undefined,
-        isEligibleForSkripsi
+        isEligibleForSkripsi,
       },
     });
 
@@ -484,21 +482,21 @@ export const getAllNews = async (req: Request, res: Response) => {
 
     const whereClause: Prisma.NewsWhereInput = search
       ? {
-        OR: [
-          {
-            title: {
-              contains: search,
-              mode: 'insensitive',
+          OR: [
+            {
+              title: {
+                contains: search,
+                mode: 'insensitive',
+              },
             },
-          },
-          {
-            content: {
-              contains: search,
-              mode: 'insensitive',
+            {
+              content: {
+                contains: search,
+                mode: 'insensitive',
+              },
             },
-          },
-        ],
-      }
+          ],
+        }
       : {};
 
     const [news, total] = await Promise.all([
