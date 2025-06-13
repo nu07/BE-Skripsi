@@ -252,13 +252,69 @@ export const updateSkripsiByAdmin = async (req: Request, res: Response) => {
 
 export const getAllSkripsi = async (req: Request, res: Response) => {
   try {
-    const skripsi = await prisma.skripsi.findMany(); // Mendapatkan semua admin
-    res.status(200).json(skripsi);
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const search = (req.query.search as string) || '';
+    const showDeleted = req.query.showDeleted === 'true';
+    const statusFilter = req.query.status as string | undefined; // "pending", "gagal", "sukses"
+    const skip = (page - 1) * limit;
+
+    const whereClause: Prisma.SkripsiWhereInput = {};
+
+    if (!showDeleted) {
+      whereClause.deletedAt = null;
+    }
+
+    if (search) {
+      whereClause.OR = [
+        { judul: { contains: search, mode: 'insensitive' } },
+        { mahasiswa: { nama: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
+    if (statusFilter && ['pending', 'gagal', 'sukses'].includes(statusFilter)) {
+      whereClause.status = statusFilter;
+    }
+
+    const [skripsiList, total] = await Promise.all([
+      prisma.skripsi.findMany({
+        where: whereClause,
+        skip,
+        take: limit,
+        orderBy: [
+          { 
+            status: 'asc' // secara default "pending" < "gagal" < "sukses"
+          },
+          { 
+            mahasiswa: { nama: 'asc' } 
+          },
+        ],
+        include: {
+          mahasiswa: true,
+          pembimbing1: true,
+          pembimbing2: true
+        },
+      }),
+      prisma.skripsi.count({ where: whereClause }),
+    ]);
+
+    return res.status(200).json({
+      message: 'Daftar skripsi berhasil diambil',
+      data: skripsiList,
+      pagination: {
+        total,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        limit,
+      },
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Failed to fetch admins' });
+    return res.status(500).json({ message: 'Gagal mengambil daftar skripsi' });
   }
 };
+
+
 
 // 7. ACC / Tolak Sidang + Atur Penguji
 export const updateSidangByAdmin = async (req: Request, res: Response) => {
@@ -309,33 +365,102 @@ export const createAdmin = async (req: Request, res: Response) => {
   const { email, password, nama } = req.body;
 
   try {
-    // Hash password yang diterima dari request
+    // Validasi email tidak boleh kosong
+    if (!email || !password || !nama) {
+      return res.status(400).json({ message: 'Email, password, dan nama wajib diisi.' });
+    }
+
+    // Cek apakah email sudah digunakan oleh admin, dosen, atau mahasiswa
+    const existingEmail =
+      (await prisma.admin.findUnique({ where: { email } })) ||
+      (await prisma.dosen.findUnique({ where: { email } })) ||
+      (await prisma.mahasiswa.findUnique({ where: { email } }));
+
+    if (existingEmail) {
+      return res.status(400).json({ message: 'Email sudah digunakan oleh pengguna lain.' });
+    }
+
+    // Hash password sebelum disimpan
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Buat admin baru di database
+    // Buat admin baru
     const admin = await prisma.admin.create({
       data: {
         email,
         password: hashedPassword,
         nama,
       },
+      select: {
+        id: true,
+        email: true,
+        nama: true,
+        deletedAt: true,
+      },
     });
 
-    res.status(201).json(admin); // Return admin yang baru dibuat
+    return res.status(201).json({
+      message: 'Admin berhasil dibuat.',
+      data: admin,
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Failed to create admin' });
+    return res.status(500).json({ message: 'Gagal membuat admin.' });
   }
 };
 
 // Lihat Semua Admin
 export const getAllAdmins = async (req: Request, res: Response) => {
   try {
-    const admins = await prisma.admin.findMany(); // Mendapatkan semua admin
-    res.status(200).json(admins);
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const search = (req.query.search as string) || '';
+    const showDeleted = req.query.showDeleted === 'true';
+    const skip = (page - 1) * limit;
+
+    const whereClause: Prisma.AdminWhereInput = {};
+
+    // Filter deleted
+    if (!showDeleted) {
+      whereClause.deletedAt = null;
+    }
+
+    // Filter search
+    if (search) {
+      whereClause.OR = [
+        { nama: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [adminList, total] = await Promise.all([
+      prisma.admin.findMany({
+        where: whereClause,
+        skip,
+        take: limit,
+        orderBy: { nama: 'asc' },
+        select: {
+          id: true,
+          nama: true,
+          email: true,
+          deletedAt: true,
+        },
+      }),
+      prisma.admin.count({ where: whereClause }),
+    ]);
+
+    return res.status(200).json({
+      message: 'Daftar admin berhasil diambil',
+      data: adminList,
+      pagination: {
+        total,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        limit,
+      },
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Failed to fetch admins' });
+    return res.status(500).json({ message: 'Gagal mengambil daftar admin' });
   }
 };
 
@@ -362,27 +487,68 @@ export const getAdminById = async (req: Request, res: Response) => {
 // Update Admin
 export const updateAdmin = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { email, password, nama } = req.body;
+  const { email, password, nama, restore } = req.body;
 
   try {
-    // Hash password yang baru
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Cek apakah email sudah digunakan oleh admin lain
+    const existingAdmin = await prisma.admin.findFirst({
+      where: {
+        email,
+        NOT: { id }, // kecuali yang sedang diupdate
+      },
+    });
+    if (existingAdmin) {
+      return res.status(400).json({ message: 'Email sudah digunakan oleh admin lain.' });
+    }
+
+    // Cek email di dosen
+    const existingDosen = await prisma.dosen.findUnique({ where: { email } });
+    if (existingDosen) {
+      return res.status(400).json({ message: 'Email sudah digunakan oleh dosen.' });
+    }
+
+    // Cek email di mahasiswa
+    const existingMahasiswa = await prisma.mahasiswa.findUnique({ where: { email } });
+    if (existingMahasiswa) {
+      return res.status(400).json({ message: 'Email sudah digunakan oleh mahasiswa.' });
+    }
+
+    const dataToUpdate: any = {
+      email,
+      nama,
+    };
+
+    // Jika password tidak kosong, hash dan masukkan ke data update
+    if (password && password.trim() !== '') {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      dataToUpdate.password = hashedPassword;
+    }
+
+    // Jika restore === true, maka hapus soft delete
+    if (restore === true) {
+      dataToUpdate.deletedAt = null;
+    }
 
     const updatedAdmin = await prisma.admin.update({
       where: { id },
-      data: {
-        email,
-        password: hashedPassword,
-        nama,
-      },
+      data: dataToUpdate,
     });
 
-    res.status(200).json(updatedAdmin); // Return admin yang sudah diperbarui
+    res.status(200).json({
+      message: 'Admin berhasil diperbarui.',
+      data: {
+        id: updatedAdmin.id,
+        email: updatedAdmin.email,
+        nama: updatedAdmin.nama,
+        deletedAt: updatedAdmin.deletedAt,
+      },
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Failed to update admin' });
+    res.status(500).json({ message: 'Gagal memperbarui admin.' });
   }
 };
+
 
 // Hapus Admin
 export const deleteAdmin = async (req: Request, res: Response) => {
