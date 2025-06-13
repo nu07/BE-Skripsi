@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -407,31 +407,54 @@ export const getAllNews = async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
+    const search = (req.query.search as string) || "";
+
     const skip = (page - 1) * limit;
+
+    const whereClause: Prisma.NewsWhereInput = search
+      ? {
+          OR: [
+            {
+              title: {
+                contains: search,
+                mode: "insensitive",
+              },
+            },
+            {
+              content: {
+                contains: search,
+                mode: "insensitive",
+              },
+            },
+          ],
+        }
+      : {};
 
     const [news, total] = await Promise.all([
       prisma.news.findMany({
         skip,
         take: limit,
+        orderBy: { createdAt: "desc" },
+        where: whereClause,
         include: {
           admin: true,
         },
-        orderBy: {
-          createdAt: 'desc',
-        },
       }),
-      prisma.news.count(),
+      prisma.news.count({ where: whereClause }),
     ]);
 
     return res.status(200).json({
       data: news,
-      currentPage: page,
-      totalPages: Math.ceil(total / limit),
-      totalItems: total,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Terjadi kesalahan server.' });
+    return res.status(500).json({ message: "Terjadi kesalahan server." });
   }
 };
 
@@ -441,8 +464,8 @@ export const getNewsById = async (req: Request, res: Response) => {
     const news = await prisma.news.findUnique({
       where: { id },
       include: {
-        admin : true
-      }
+        admin: true,
+      },
     });
 
     if (!news) {

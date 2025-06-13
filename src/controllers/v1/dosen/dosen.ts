@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -271,19 +271,53 @@ export const createDosen = async (req: Request, res: Response) => {
   }
 };
 
-// READ (LIST)
 export const getAllDosen = async (req: Request, res: Response) => {
   try {
-    const dosenList = await prisma.dosen.findMany({
-      where: { deletedAt: null },
-    });
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const search = (req.query.search as string) || "";
+    const skip = (page - 1) * limit;
 
-    res.status(200).json({ message: 'Daftar dosen berhasil diambil', data: dosenList });
+   const whereClause: Prisma.DosenWhereInput = {};
+       if (search) {
+      whereClause.OR = [
+        { nama: { contains: search, mode: "insensitive" } },
+        { nidn: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    const [dosenList, total] = await Promise.all([
+      prisma.dosen.findMany({
+        where: whereClause,
+        skip,
+        take: limit,
+        orderBy: { nama: "asc" },
+        select: {
+          id: true,
+          nama: true,
+          nidn: true,
+          email: true,
+          // password dan relasi disembunyikan, bisa ditambahkan kalau perlu
+        },
+      }),
+      prisma.dosen.count({ where: whereClause }),
+    ]);
+
+    return res.status(200).json({
+      message: "Daftar dosen berhasil diambil",
+      data: dosenList,
+      pagination: {
+        total,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        limit,
+      },
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Gagal mengambil daftar dosen' });
+    return res.status(500).json({ message: "Gagal mengambil daftar dosen" });
   }
-};
+}
 
 // READ (BY ID)
 export const getDosenById = async (req: Request, res: Response) => {
