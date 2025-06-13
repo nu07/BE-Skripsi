@@ -746,6 +746,73 @@ export const deleteNews = async (req: Request, res: Response) => {
   }
 };
 
+export const getAllPendaftaranSidang = async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const search = (req.query.search as string) || '';
+    const showDeleted = req.query.showDeleted === 'true';
+    const skip = (page - 1) * limit;
+
+    const whereClause: Prisma.PendaftaranSidangWhereInput = {};
+
+    if (!showDeleted) {
+      whereClause.deletedAt = null;
+    }
+
+    if (search) {
+      whereClause.OR = [
+        { status: { contains: search, mode: 'insensitive' } },
+        { catatan: { contains: search, mode: 'insensitive' } },
+        {
+          mahasiswa: {
+            nama: { contains: search, mode: 'insensitive' }
+          }
+        }
+      ];
+    }
+
+    const [rawList, total] = await Promise.all([
+      prisma.pendaftaranSidang.findMany({
+        where: whereClause,
+        skip,
+        take: limit,
+        include: {
+          mahasiswa: true,
+          skripsi: true,
+          penguji1: true,
+          penguji2: true,
+        },
+      }),
+      prisma.pendaftaranSidang.count({ where: whereClause }),
+    ]);
+
+    // Urutkan berdasarkan status: unfinished → ongoing → finished
+    const getStatusOrder = (status: string) => {
+      if (status === 'unfinished') return 0;
+      if (status === 'ongoing') return 1;
+      if (status === 'finished') return 2;
+      return 3; // fallback jika status tidak dikenal
+    };
+
+    const sortedList = rawList.sort((a, b) => getStatusOrder(a.status) - getStatusOrder(b.status));
+
+    return res.status(200).json({
+      message: 'Daftar pendaftaran sidang berhasil diambil',
+      data: sortedList,
+      pagination: {
+        total,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        limit,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Terjadi kesalahan saat mengambil data.' });
+  }
+};
+
 // export const createJadwalSidang = async (req: Request, res: Response) => {
 //   try {
 //     const { tanggal, ruangan } = req.body;

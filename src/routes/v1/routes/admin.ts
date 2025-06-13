@@ -22,6 +22,7 @@ router.put('/sidang/:id', [authJwt.verifyToken], AdminController.updateSidangByA
 
 // Lihat Catatan Sidang
 router.get('/sidang/:id/catatan', [authJwt.verifyToken], AdminController.getCatatanSidang); // Lihat Catatan Sidang
+router.get('/sidang', [authJwt.verifyToken], AdminController.getAllPendaftaranSidang); // Lihat Catatan Sidang
 
 // CRUD Admin
 router.post('/admin', [], AdminController.createAdmin); // Tambah Admin
