@@ -57,10 +57,7 @@ export const getDaftarBimbingan = async (req: Request, res: Response) => {
     // Ambil semua skripsi yang dibimbing dosen
     const skripsiList = await prisma.skripsi.findMany({
       where: {
-        OR: [
-          { id_pembimbing1: dosenId },
-          { id_pembimbing2: dosenId },
-        ],
+        OR: [{ id_pembimbing1: dosenId }, { id_pembimbing2: dosenId }],
         mahasiswa: {
           nama: {
             contains: search,
@@ -77,7 +74,7 @@ export const getDaftarBimbingan = async (req: Request, res: Response) => {
       },
     });
 
-    const mahasiswaIds = skripsiList.map(s => s.id_mahasiswa);
+    const mahasiswaIds = skripsiList.map((s) => s.id_mahasiswa);
 
     const approvals = await prisma.approvalSkripsi.findMany({
       where: {
@@ -86,16 +83,8 @@ export const getDaftarBimbingan = async (req: Request, res: Response) => {
     });
 
     const formatted = skripsiList.map((skripsi) => {
-      const approval1 = approvals.find(
-        a =>
-          a.role === 'pembimbing1' &&
-          a.id_mahasiswa === skripsi.id_mahasiswa
-      );
-      const approval2 = approvals.find(
-        a =>
-          a.role === 'pembimbing2' &&
-          a.id_mahasiswa === skripsi.id_mahasiswa
-      );
+      const approval1 = approvals.find((a) => a.role === 'pembimbing1' && a.id_mahasiswa === skripsi.id_mahasiswa);
+      const approval2 = approvals.find((a) => a.role === 'pembimbing2' && a.id_mahasiswa === skripsi.id_mahasiswa);
 
       return {
         ...skripsi,
@@ -108,10 +97,12 @@ export const getDaftarBimbingan = async (req: Request, res: Response) => {
 
     // Filter berdasarkan status approval dari dosen yang sedang login
     const filtered = formatted.filter((item) => {
-      const statusPembimbing = 
-        item.id_pembimbing1 === dosenId ? item.status_pembimbing1 :
-        item.id_pembimbing2 === dosenId ? item.status_pembimbing2 :
-        null;
+      const statusPembimbing =
+        item.id_pembimbing1 === dosenId
+          ? item.status_pembimbing1
+          : item.id_pembimbing2 === dosenId
+            ? item.status_pembimbing2
+            : null;
 
       if (status === 'progress') return statusPembimbing === false || statusPembimbing === null;
       if (status === 'finish') return statusPembimbing === true;
@@ -133,7 +124,6 @@ export const getDaftarBimbingan = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Gagal mengambil daftar bimbingan.' });
   }
 };
-
 
 // ACC atau tolak skripsi
 export const approveSkripsi = async (req: Request, res: Response) => {
@@ -247,7 +237,6 @@ export const getDaftarSidang = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Gagal mengambil daftar sidang.' });
   }
 };
-
 
 export const inputCatatanPenguji = async (req: Request, res: Response) => {
   const { pendaftaranId, catatan } = req.body;
