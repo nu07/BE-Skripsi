@@ -247,8 +247,6 @@ export const getDaftarSidang = async (req: Request, res: Response) => {
   }
 };
 
-
-
 export const inputCatatanPenguji = async (req: Request, res: Response) => {
   const { pendaftaranId, catatan } = req.body;
   const dosenId = req.userId as string;

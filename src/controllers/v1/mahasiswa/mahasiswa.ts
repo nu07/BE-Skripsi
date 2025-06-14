@@ -209,7 +209,7 @@ export const uploadBuktiPembayaranSkripsi = async (req: Request, res: Response) 
       });
     }
 
-    res.status(200).json({message: 'Bukti pembayaran skripsi berhasil diunggah.'});
+    res.status(200).json({ message: 'Bukti pembayaran skripsi berhasil diunggah.' });
   } catch (error) {
     console.error(error);
     removeImage(filePath);
