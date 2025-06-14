@@ -47,23 +47,93 @@ export const login = async (req: Request, res: Response) => {
 // Daftar mahasiswa bimbingan (baik pembimbing1 atau pembimbing2)
 export const getDaftarBimbingan = async (req: Request, res: Response) => {
   const dosenId = req.userId;
+  const status = req.query.status as string; // "progress" | "finish"
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const skip = (page - 1) * limit;
+  const search = (req.query.search as string) || '';
 
   try {
-    const bimbingan = await prisma.skripsi.findMany({
+    // Ambil semua skripsi yang dibimbing dosen
+    const skripsiList = await prisma.skripsi.findMany({
       where: {
-        OR: [{ id_pembimbing1: dosenId as string }, { id_pembimbing2: dosenId as string }],
+        OR: [
+          { id_pembimbing1: dosenId },
+          { id_pembimbing2: dosenId },
+        ],
+        mahasiswa: {
+          nama: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
       },
+      skip,
+      take: limit,
       include: {
         mahasiswa: true,
+        pembimbing1: true,
+        pembimbing2: true,
       },
     });
 
-    res.status(200).json(bimbingan);
+    const mahasiswaIds = skripsiList.map(s => s.id_mahasiswa);
+
+    const approvals = await prisma.approvalSkripsi.findMany({
+      where: {
+        id_mahasiswa: { in: mahasiswaIds },
+      },
+    });
+
+    const formatted = skripsiList.map((skripsi) => {
+      const approval1 = approvals.find(
+        a =>
+          a.role === 'pembimbing1' &&
+          a.id_mahasiswa === skripsi.id_mahasiswa
+      );
+      const approval2 = approvals.find(
+        a =>
+          a.role === 'pembimbing2' &&
+          a.id_mahasiswa === skripsi.id_mahasiswa
+      );
+
+      return {
+        ...skripsi,
+        catatan_pembimbing1: approval1?.catatan ?? null,
+        catatan_pembimbing2: approval2?.catatan ?? null,
+        status_pembimbing1: approval1?.status ?? null,
+        status_pembimbing2: approval2?.status ?? null,
+      };
+    });
+
+    // Filter berdasarkan status approval dari dosen yang sedang login
+    const filtered = formatted.filter((item) => {
+      const statusPembimbing = 
+        item.id_pembimbing1 === dosenId ? item.status_pembimbing1 :
+        item.id_pembimbing2 === dosenId ? item.status_pembimbing2 :
+        null;
+
+      if (status === 'progress') return statusPembimbing === false || statusPembimbing === null;
+      if (status === 'finish') return statusPembimbing === true;
+      return true; // tanpa filter
+    });
+
+    return res.status(200).json({
+      message: 'Daftar mahasiswa berhasil diambil',
+      data: filtered,
+      pagination: {
+        total: filtered.length,
+        currentPage: page,
+        totalPages: Math.ceil(filtered.length / limit),
+        limit,
+      },
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).send('Gagal mengambil daftar bimbingan.');
+    return res.status(500).json({ message: 'Gagal mengambil daftar bimbingan.' });
   }
 };
+
 
 // ACC atau tolak skripsi
 export const approveSkripsi = async (req: Request, res: Response) => {
@@ -125,23 +195,59 @@ export const approveSkripsi = async (req: Request, res: Response) => {
 // Lihat daftar sidang sebagai penguji
 export const getDaftarSidang = async (req: Request, res: Response) => {
   const dosenId = req.userId as string;
+
   try {
-    const sidang = await prisma.pendaftaranSidang.findMany({
-      where: {
-        OR: [{ id_penguji1: dosenId }, { id_penguji2: dosenId }],
-      },
-      include: {
-        mahasiswa: true,
-        skripsi: true,
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const search = (req.query.search as string) || '';
+    const skip = (page - 1) * limit;
+
+    const whereClause: any = {
+      OR: [{ id_penguji1: dosenId }, { id_penguji2: dosenId }],
+      deletedAt: null,
+    };
+
+    // Optional: filter berdasarkan nama mahasiswa
+    if (search) {
+      whereClause.mahasiswa = {
+        nama: { contains: search, mode: 'insensitive' },
+      };
+    }
+
+    const [sidangList, total] = await Promise.all([
+      prisma.pendaftaranSidang.findMany({
+        where: whereClause,
+        include: {
+          mahasiswa: true,
+          skripsi: true,
+          penguji1: true,
+          penguji2: true,
+        },
+        skip,
+        take: limit,
+        orderBy: {
+          tanggal_sidang: 'asc',
+        },
+      }),
+      prisma.pendaftaranSidang.count({ where: whereClause }),
+    ]);
+
+    return res.status(200).json({
+      message: 'Daftar sidang berhasil diambil',
+      data: sidangList,
+      pagination: {
+        total,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        limit,
       },
     });
-
-    res.status(200).json({ data: sidang });
   } catch (error) {
     console.error(error);
-    res.status(500).send('Gagal mengambil daftar sidang.');
+    return res.status(500).json({ message: 'Gagal mengambil daftar sidang.' });
   }
 };
+
 
 export const inputCatatanPenguji = async (req: Request, res: Response) => {
   const { pendaftaranId, catatan } = req.body;
