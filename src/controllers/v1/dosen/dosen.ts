@@ -190,18 +190,27 @@ export const getDaftarSidang = async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const search = (req.query.search as string) || '';
+    const status = req.query.status as string; // "coming" | "passed"
     const skip = (page - 1) * limit;
+    const now = new Date();
 
-    const whereClause: any = {
+    let whereClause: any = {
       OR: [{ id_penguji1: dosenId }, { id_penguji2: dosenId }],
       deletedAt: null,
     };
 
-    // Optional: filter berdasarkan nama mahasiswa
+    // Filter nama mahasiswa jika ada
     if (search) {
       whereClause.mahasiswa = {
         nama: { contains: search, mode: 'insensitive' },
       };
+    }
+
+    // Filter berdasarkan waktu hanya jika status dikirim
+    if (status === 'coming') {
+      whereClause.tanggal_sidang = { gt: now };
+    } else if (status === 'passed') {
+      whereClause.tanggal_sidang = { lt: now };
     }
 
     const [sidangList, total] = await Promise.all([
@@ -237,6 +246,8 @@ export const getDaftarSidang = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Gagal mengambil daftar sidang.' });
   }
 };
+
+
 
 export const inputCatatanPenguji = async (req: Request, res: Response) => {
   const { pendaftaranId, catatan } = req.body;
