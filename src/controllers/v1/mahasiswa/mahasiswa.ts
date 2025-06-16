@@ -190,12 +190,16 @@ export const uploadBuktiPembayaranSkripsi = async (req: Request, res: Response) 
       where: { id_mahasiswa: req.userId },
     });
 
+    if (!judul || typeof judul !== 'string' || judul.trim() === '') {
+      return res.status(400).json({ message: 'Judul skripsi tidak boleh kosong.' });
+    }
+
     if (existingSkripsi) {
       // Update bukti pembayaran
       removeImage(existingSkripsi.buktiPembayaran);
       await prisma.skripsi.update({
         where: { id_mahasiswa: req.userId },
-        data: { buktiPembayaran: filePath, status: 'Menunggu' },
+        data: { buktiPembayaran: filePath, status: 'pending' },
       });
     } else {
       await prisma.skripsi.create({
@@ -204,7 +208,7 @@ export const uploadBuktiPembayaranSkripsi = async (req: Request, res: Response) 
           judul: judul,
           // Jangan sertakan pembimbing jika memang belum ditentukan
           buktiPembayaran: filePath,
-          status: 'Menunggu',
+          status: 'pending',
         },
       });
     }
@@ -233,12 +237,12 @@ export const getSkripsi = async (req: Request, res: Response) => {
       },
     });
 
-    if (!skripsi) return res.status(404).send('Data skripsi tidak ditemukan.');
+    if (!skripsi) return res.status(200).json({catatanPembayaran: 'Silahkan isi Form!', status: 'gagal'});
 
     return res.status(200).json(skripsi);
   } catch (error) {
     console.error(error);
-    return res.status(500).send('Terjadi kesalahan saat mengambil data skripsi.');
+    return res.status(500).json({Message: 'Terjadi kesalahan saat mengambil data skripsi.'});
   }
 };
 
