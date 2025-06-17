@@ -320,23 +320,51 @@ export const updateSidangByAdmin = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { status, id_penguji1, id_penguji2, tanggal_sidang } = req.body;
 
-    // Update status sidang dan atur penguji
-    const sidang = await prisma.pendaftaranSidang.update({
-      where: { id: id },
+    // Update pendaftaran sidang
+    const updatedSidang = await prisma.pendaftaranSidang.update({
+      where: { id },
       data: {
         status,
-        id_penguji1: id_penguji1 ? id_penguji1 : null,
-        id_penguji2: id_penguji2 ? id_penguji2 : null,
+        id_penguji1: id_penguji1 || null,
+        id_penguji2: id_penguji2 || null,
         tanggal_sidang,
+      },
+      include: {
+        mahasiswa: { select: { id: true } }, // Ambil id mahasiswa
       },
     });
 
-    return res.status(200).json(sidang);
+    const id_mahasiswa = updatedSidang.mahasiswa.id;
+
+    // Cek status approval penguji di ApprovalSkripsi
+    const approvals = await prisma.approvalSkripsi.findMany({
+      where: {
+        id_mahasiswa: id_mahasiswa,
+        status: true,
+        OR: [
+          { id_dosen: id_penguji1 },
+          { id_dosen: id_penguji2 },
+        ],
+      },
+    });
+
+    const penguji1Acc = approvals.some((a) => a.id_dosen === id_penguji1);
+    const penguji2Acc = approvals.some((a) => a.id_dosen === id_penguji2);
+
+    if (penguji1Acc && penguji2Acc) {
+      await prisma.mahasiswa.update({
+        where: { id: id_mahasiswa },
+        data: { isEligibleForSidang: true },
+      });
+    }
+
+    return res.status(200).json({ message: 'Data sidang berhasil diperbarui.' });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Terjadi kesalahan server.' });
   }
 };
+
 
 // 8. Lihat Catatan Sidang
 export const getCatatanSidang = async (req: Request, res: Response) => {
