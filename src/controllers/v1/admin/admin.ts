@@ -341,10 +341,7 @@ export const updateSidangByAdmin = async (req: Request, res: Response) => {
       where: {
         id_mahasiswa: id_mahasiswa,
         status: true,
-        OR: [
-          { id_dosen: id_penguji1 },
-          { id_dosen: id_penguji2 },
-        ],
+        OR: [{ id_dosen: id_penguji1 }, { id_dosen: id_penguji2 }],
       },
     });
 
@@ -364,7 +361,6 @@ export const updateSidangByAdmin = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Terjadi kesalahan server.' });
   }
 };
-
 
 // 8. Lihat Catatan Sidang
 export const getCatatanSidang = async (req: Request, res: Response) => {
