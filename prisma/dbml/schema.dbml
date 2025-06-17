@@ -101,7 +101,7 @@ Table ApprovalHistory {
 
 Table Admin {
   id String [pk]
-  username String [unique, not null]
+  email String [unique, not null]
   password String [not null]
   nama String [not null]
   approvals ApprovalHistory [not null]

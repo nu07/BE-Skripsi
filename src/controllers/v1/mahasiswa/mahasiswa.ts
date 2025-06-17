@@ -237,12 +237,12 @@ export const getSkripsi = async (req: Request, res: Response) => {
       },
     });
 
-    if (!skripsi) return res.status(200).json({catatanPembayaran: 'Silahkan isi Form!', status: 'gagal'});
+    if (!skripsi) return res.status(200).json({ catatanPembayaran: 'Silahkan isi Form!', status: 'gagal' });
 
     return res.status(200).json(skripsi);
   } catch (error) {
     console.error(error);
-    return res.status(500).json({Message: 'Terjadi kesalahan saat mengambil data skripsi.'});
+    return res.status(500).json({ Message: 'Terjadi kesalahan saat mengambil data skripsi.' });
   }
 };
 

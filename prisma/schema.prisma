@@ -7,10 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// generator dbml {
-//   provider = "prisma-dbml-generator"
-//   output   = "../prisma/dbml"
-// }
+generator dbml {
+  provider = "prisma-dbml-generator"
+  output   = "../prisma/dbml"
+}
 
 model Mahasiswa {
   id                   String              @id @default(uuid()) // UUID
