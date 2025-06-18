@@ -6,10 +6,6 @@ import jwt from 'jsonwebtoken';
 const prisma = new PrismaClient();
 
 // 1. Tambah Mahasiswa
-import { Request, Response } from "express";
-import { prisma } from "../../../lib/prisma"; // sesuaikan path prisma kamu
-import bcrypt from "bcryptjs";
-
 export const createMahasiswa = async (req: Request, res: Response) => {
   try {
     const data = req.body;
@@ -21,31 +17,20 @@ export const createMahasiswa = async (req: Request, res: Response) => {
     const skippedMahasiswa: any[] = [];
 
     for (const mhs of mahasiswaList) {
-      const {
-        nim,
-        nama,
-        email,
-        password,
-        isEligibleForSkripsi = true,
-      } = mhs;
+      const { nim, nama, email, password, isEligibleForSkripsi = true } = mhs;
 
       // Validasi awal
       if (!nim || !nama || !email || !password) {
         skippedMahasiswa.push({
           nim,
           email,
-          reason: "Data tidak lengkap",
+          reason: 'Data tidak lengkap',
         });
         continue;
       }
 
       // Cek apakah NIM/email sudah ada di sistem
-      const [
-        existingNIM,
-        existingEmailMhs,
-        existingEmailDosen,
-        existingEmailAdmin,
-      ] = await Promise.all([
+      const [existingNIM, existingEmailMhs, existingEmailDosen, existingEmailAdmin] = await Promise.all([
         prisma.mahasiswa.findUnique({ where: { nim: String(nim) } }),
         prisma.mahasiswa.findUnique({ where: { email } }),
         prisma.dosen.findUnique({ where: { email } }),
@@ -56,7 +41,7 @@ export const createMahasiswa = async (req: Request, res: Response) => {
         skippedMahasiswa.push({
           nim,
           email,
-          reason: "NIM sudah terdaftar",
+          reason: 'NIM sudah terdaftar',
         });
         continue;
       }
@@ -65,7 +50,7 @@ export const createMahasiswa = async (req: Request, res: Response) => {
         skippedMahasiswa.push({
           nim,
           email,
-          reason: "Email sudah terdaftar di sistem",
+          reason: 'Email sudah terdaftar di sistem',
         });
         continue;
       }
@@ -94,12 +79,9 @@ export const createMahasiswa = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error(error);
-    return res
-      .status(500)
-      .json({ message: "Terjadi kesalahan server.", error });
+    return res.status(500).json({ message: 'Terjadi kesalahan server.', error });
   }
 };
-
 
 export const getAllMahasiswa = async (req: Request, res: Response) => {
   try {
