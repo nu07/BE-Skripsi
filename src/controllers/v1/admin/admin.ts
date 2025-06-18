@@ -6,58 +6,100 @@ import jwt from 'jsonwebtoken';
 const prisma = new PrismaClient();
 
 // 1. Tambah Mahasiswa
+import { Request, Response } from "express";
+import { prisma } from "../../../lib/prisma"; // sesuaikan path prisma kamu
+import bcrypt from "bcryptjs";
+
 export const createMahasiswa = async (req: Request, res: Response) => {
   try {
-    const { nim, nama, email, password, isEligibleForSkripsi = true } = req.body;
+    const data = req.body;
 
-    // Cek apakah NIM sudah ada di Mahasiswa
-    const existingMahasiswaNim = await prisma.mahasiswa.findUnique({
-      where: { nim },
-    });
+    // Terima 1 objek atau array of mahasiswa
+    const mahasiswaList = Array.isArray(data) ? data : [data];
 
-    if (existingMahasiswaNim) {
-      return res.status(400).json({ message: 'NIM sudah terdaftar.' });
-    }
+    const insertedMahasiswa: any[] = [];
+    const skippedMahasiswa: any[] = [];
 
-    // Cek apakah email sudah ada di Mahasiswa
-    const existingMahasiswaEmail = await prisma.mahasiswa.findUnique({
-      where: { email },
-    });
-
-    // Cek apakah email sudah ada di Dosen
-    const existingDosenEmail = await prisma.dosen.findUnique({
-      where: { email },
-    });
-
-    // Cek apakah email sudah ada di Admin
-    const existingAdminEmail = await prisma.admin.findUnique({
-      where: { email },
-    });
-
-    if (existingMahasiswaEmail || existingDosenEmail || existingAdminEmail) {
-      return res.status(400).json({ message: 'Email sudah terdaftar di sistem.' });
-    }
-
-    // Hash password menggunakan bcrypt
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Membuat mahasiswa baru
-    const mahasiswa = await prisma.mahasiswa.create({
-      data: {
+    for (const mhs of mahasiswaList) {
+      const {
         nim,
         nama,
         email,
-        password: hashedPassword,
-        isEligibleForSkripsi,
-      },
-    });
+        password,
+        isEligibleForSkripsi = true,
+      } = mhs;
 
-    return res.status(201).json(mahasiswa);
+      // Validasi awal
+      if (!nim || !nama || !email || !password) {
+        skippedMahasiswa.push({
+          nim,
+          email,
+          reason: "Data tidak lengkap",
+        });
+        continue;
+      }
+
+      // Cek apakah NIM/email sudah ada di sistem
+      const [
+        existingNIM,
+        existingEmailMhs,
+        existingEmailDosen,
+        existingEmailAdmin,
+      ] = await Promise.all([
+        prisma.mahasiswa.findUnique({ where: { nim: String(nim) } }),
+        prisma.mahasiswa.findUnique({ where: { email } }),
+        prisma.dosen.findUnique({ where: { email } }),
+        prisma.admin.findUnique({ where: { email } }),
+      ]);
+
+      if (existingNIM) {
+        skippedMahasiswa.push({
+          nim,
+          email,
+          reason: "NIM sudah terdaftar",
+        });
+        continue;
+      }
+
+      if (existingEmailMhs || existingEmailDosen || existingEmailAdmin) {
+        skippedMahasiswa.push({
+          nim,
+          email,
+          reason: "Email sudah terdaftar di sistem",
+        });
+        continue;
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Simpan data
+      const newMahasiswa = await prisma.mahasiswa.create({
+        data: {
+          nim: String(nim),
+          nama,
+          email,
+          password: hashedPassword,
+          isEligibleForSkripsi,
+        },
+      });
+
+      insertedMahasiswa.push(newMahasiswa);
+    }
+
+    return res.status(201).json({
+      message: `Berhasil menambahkan ${insertedMahasiswa.length} mahasiswa.`,
+      inserted: insertedMahasiswa,
+      skipped: skippedMahasiswa,
+    });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Terjadi kesalahan server.' });
+    return res
+      .status(500)
+      .json({ message: "Terjadi kesalahan server.", error });
   }
 };
+
 
 export const getAllMahasiswa = async (req: Request, res: Response) => {
   try {

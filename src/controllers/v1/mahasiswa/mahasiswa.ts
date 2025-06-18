@@ -125,13 +125,13 @@ export const getHasilSidang = async (req: Request, res: Response) => {
     });
 
     if (!hasilSidang || hasilSidang.length === 0) {
-      return res.status(404).json({message: 'Hasil sidang tidak ditemukan.'});
+      return res.status(404).json({ message: 'Hasil sidang tidak ditemukan.' });
     }
 
     res.status(200).json(hasilSidang);
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: 'Terjadi kesalahan pada server.'});
+    res.status(500).json({ message: 'Terjadi kesalahan pada server.' });
   }
 };
 
@@ -342,10 +342,10 @@ export const getJadwalSidang = async (req: Request, res: Response) => {
       },
     });
 
-    if(jadwal){
-    return  res.status(200).json(jadwal);
+    if (jadwal) {
+      return res.status(200).json(jadwal);
     }
-    return  res.status(404).json({message: "Anda Belum Bisa Mengikuti Sidang"});
+    return res.status(404).json({ message: 'Anda Belum Bisa Mengikuti Sidang' });
   } catch (error) {
     console.error(error);
     res.status(500).json('Gagal mengambil jadwal sidang.');
