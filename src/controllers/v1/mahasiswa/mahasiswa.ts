@@ -45,6 +45,43 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
+export const getStatusPendaftaranSidang = async (req: Request, res: Response) => {
+  try {
+    const id_mahasiswa = req.userId;
+
+    if (!id_mahasiswa) {
+      return res.status(401).json({ message: 'Unauthorized: ID mahasiswa tidak ditemukan.' });
+    }
+
+    const pendaftaran = await prisma.pendaftaranSidang.findFirst({
+      where: {
+        id_mahasiswa,
+        deletedAt: null, // jika ada soft delete
+      },
+    });
+
+    if (!pendaftaran) {
+      return res.status(200).json({
+        hasRegistered: false,
+        message: 'Anda belum mendaftar sidang.',
+      });
+    }
+
+    return res.status(200).json({
+      hasRegistered: true,
+      status: pendaftaran.status,
+      tanggal_sidang: pendaftaran.tanggal_sidang,
+      message: `Anda sudah mendaftar sidang dengan status: ${pendaftaran.status}`,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: 'Terjadi kesalahan saat memeriksa status pendaftaran sidang.',
+      error: error instanceof Error ? error.message : error,
+    });
+  }
+};
+
 export const getStatusPembimbing = async (req: Request, res: Response) => {
   try {
     const id_mahasiswa = req.userId;
