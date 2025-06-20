@@ -86,6 +86,17 @@ export const getStatusPembimbing = async (req: Request, res: Response) => {
   try {
     const id_mahasiswa = req.userId;
 
+    if (!id_mahasiswa) {
+      return res.status(401).json({ message: 'Unauthorized: ID mahasiswa tidak ditemukan.' });
+    }
+
+    const pendaftaran = await prisma.pendaftaranSidang.findFirst({
+      where: {
+        id_mahasiswa,
+        deletedAt: null, // jika ada soft delete
+      },
+    });
+
     // Ambil data skripsi dan relasi pembimbing
     const skripsi = await prisma.skripsi.findUnique({
       where: { id_mahasiswa },
@@ -112,10 +123,13 @@ export const getStatusPembimbing = async (req: Request, res: Response) => {
     const accPembimbing2 = approvals.some((a) => a.role === 'pembimbing2' && a.status === true);
 
     const keduaPembimbingAcc = accPembimbing1 === true && accPembimbing2 === true;
+    
+    const hasRegistered = pendaftaran ? true : false
 
     return res.status(200).json({
       pembimbing1: skripsi.pembimbing1?.nama ?? '-',
       pembimbing2: skripsi.pembimbing2?.nama ?? '-',
+      hasRegistered,
       accPembimbing1,
       accPembimbing2,
       keduaPembimbingAcc,
