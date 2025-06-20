@@ -70,15 +70,11 @@ export const getStatusPembimbing = async (req: Request, res: Response) => {
       },
     });
 
-    const accPembimbing1 = approvals.some(
-      (a) => a.role === 'pembimbing1' && a.status === true
-    );
+    const accPembimbing1 = approvals.some((a) => a.role === 'pembimbing1' && a.status === true);
 
-    const accPembimbing2 = approvals.some(
-      (a) => a.role === 'pembimbing2' && a.status === true
-    );
-    
-    const keduaPembimbingAcc = accPembimbing1 === true && accPembimbing2 === true
+    const accPembimbing2 = approvals.some((a) => a.role === 'pembimbing2' && a.status === true);
+
+    const keduaPembimbingAcc = accPembimbing1 === true && accPembimbing2 === true;
 
     return res.status(200).json({
       pembimbing1: skripsi.pembimbing1?.nama ?? '-',
