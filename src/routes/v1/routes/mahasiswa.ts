@@ -19,6 +19,7 @@ router.get('/hasil-sidang', [authJwt.verifyToken], MahasiswaController.getHasilS
 
 // Route untuk melihat pembimbing yang ditunjuk
 router.get('/pembimbing', [authJwt.verifyToken], MahasiswaController.getPembimbing);
+router.get('/pembimbing-status', [authJwt.verifyToken], MahasiswaController.getStatusPembimbing);
 
 // Tambahan route mahasiswa
 router.post(

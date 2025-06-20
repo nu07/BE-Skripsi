@@ -45,6 +45,61 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
+export const getStatusPembimbing = async (req: Request, res: Response) => {
+  try {
+    const id_mahasiswa = req.userId;
+
+    // Ambil data skripsi dan relasi pembimbing
+    const skripsi = await prisma.skripsi.findUnique({
+      where: { id_mahasiswa },
+      include: {
+        pembimbing1: { select: { id: true, nama: true } },
+        pembimbing2: { select: { id: true, nama: true } },
+      },
+    });
+
+    if (!skripsi) {
+      return res.status(404).json({ message: 'Skripsi belum dibuat.' });
+    }
+
+    // Ambil data approval untuk mahasiswa ini dari ApprovalSkripsi
+    const approvals = await prisma.approvalSkripsi.findMany({
+      where: {
+        id_mahasiswa,
+        role: { in: ['pembimbing1', 'pembimbing2'] },
+      },
+    });
+
+    const accPembimbing1 = approvals.some(
+      (a) => a.role === 'pembimbing1' && a.status === true
+    );
+
+    const accPembimbing2 = approvals.some(
+      (a) => a.role === 'pembimbing2' && a.status === true
+    );
+    
+    const keduaPembimbingAcc = accPembimbing1 === true && accPembimbing2 === true
+
+    return res.status(200).json({
+      pembimbing1: skripsi.pembimbing1?.nama ?? '-',
+      pembimbing2: skripsi.pembimbing2?.nama ?? '-',
+      accPembimbing1,
+      accPembimbing2,
+      keduaPembimbingAcc,
+      message:
+        accPembimbing1 && accPembimbing2
+          ? 'Kedua pembimbing sudah menyetujui skripsi Anda.'
+          : 'Menunggu persetujuan dari pembimbing.',
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: 'Terjadi kesalahan server.',
+      error: error instanceof Error ? error.message : error,
+    });
+  }
+};
+
 export const getStatus = async (req: Request, res: Response) => {
   try {
     const userId = req.userId;
