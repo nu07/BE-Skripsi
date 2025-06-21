@@ -354,67 +354,97 @@ export const getDetailBimbingan = async (req: Request, res: Response) => {
 // CREATE
 export const createDosen = async (req: Request, res: Response) => {
   try {
-    const { nidn, nama, email, password } = req.body;
+    const rawData = Array.isArray(req.body) ? req.body : [req.body];
+    const isSingle = !Array.isArray(req.body);
 
-    // Cek apakah NIDN atau email sudah digunakan di tabel dosen
-    const existingDosen = await prisma.dosen.findFirst({
-      where: {
-        OR: [{ nidn }, { email }],
-      },
-    });
+    if (rawData.length === 0) {
+      return res.status(400).json({ message: "Data dosen tidak boleh kosong." });
+    }
 
-    // Cek email di tabel admin
-    const existingAdmin = await prisma.admin.findUnique({
-      where: { email },
-    });
+    const insertedDosen: any[] = [];
+    const skippedDosen: any[] = [];
 
-    // Cek email di tabel mahasiswa
-    const existingMahasiswa = await prisma.mahasiswa.findUnique({
-      where: { email },
-    });
+    for (const dosen of rawData) {
+      const nidn = String(dosen.nidn); // pastikan string
+      const { nama, email, password } = dosen;
 
-    if (existingDosen) {
-      return res.status(400).json({
-        message:
-          existingDosen.nidn === nidn
-            ? 'NIDN sudah terdaftar oleh dosen lain'
-            : 'Email sudah terdaftar oleh dosen lain',
+      if (!nidn || !nama || !email || !password) {
+        const failResponse = {
+          nidn,
+          email,
+          status: "failed",
+          reason: "Field wajib tidak boleh kosong",
+        };
+        if (isSingle) return res.status(400).json(failResponse);
+        skippedDosen.push(failResponse);
+        continue;
+      }
+
+      const [existingDosen, existingAdmin, existingMahasiswa] = await Promise.all([
+        prisma.dosen.findFirst({ where: { OR: [{ nidn }, { email }] } }),
+        prisma.admin.findUnique({ where: { email } }),
+        prisma.mahasiswa.findUnique({ where: { email } }),
+      ]);
+
+      if (existingDosen || existingAdmin || existingMahasiswa) {
+        const reason = existingDosen
+          ? existingDosen.nidn === nidn
+            ? "NIDN sudah digunakan"
+            : "Email sudah digunakan oleh dosen"
+          : existingAdmin
+          ? "Email sudah digunakan oleh admin"
+          : "Email sudah digunakan oleh mahasiswa";
+
+        const failResponse = {
+          nidn,
+          email,
+          status: "failed",
+          reason,
+        };
+
+        if (isSingle) return res.status(400).json(failResponse);
+        skippedDosen.push(failResponse);
+        continue;
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const newDosen = await prisma.dosen.create({
+        data: {
+          nidn,
+          nama,
+          email,
+          password: hashedPassword,
+        },
+      });
+
+      insertedDosen.push(newDosen);
+    }
+
+    // Respon jika input tunggal dan berhasil
+    if (isSingle) {
+      return res.status(201).json({
+        ...insertedDosen[0],
+        status: "success",
       });
     }
 
-    if (existingAdmin) {
-      return res.status(400).json({
-        message: 'Email sudah terdaftar oleh admin',
-      });
-    }
-
-    if (existingMahasiswa) {
-      return res.status(400).json({
-        message: 'Email sudah terdaftar oleh mahasiswa',
-      });
-    }
-
-    // Hash password sebelum disimpan
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newDosen = await prisma.dosen.create({
-      data: {
-        nidn,
-        nama,
-        email,
-        password: hashedPassword,
-      },
-    });
-
+    // Respon jika input banyak
     return res.status(201).json({
-      message: 'Dosen berhasil ditambahkan',
-      data: newDosen,
+      message: `Berhasil menambahkan ${insertedDosen.length} dosen.`,
+      inserted: insertedDosen,
+      skipped: skippedDosen,
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Gagal menambahkan dosen' });
+    return res.status(500).json({
+      message: "Terjadi kesalahan saat menyimpan data dosen.",
+      error: error instanceof Error ? error.message : error,
+    });
   }
 };
+
+
 
 export const getAllDosen = async (req: Request, res: Response) => {
   try {
