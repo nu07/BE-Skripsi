@@ -9,6 +9,8 @@ services:
     restart: unless-stopped
     ports:
       - '1921:14045'
+    volumes:
+      - ./public:/app/public
     networks:
       - website-discord-kelbuk_default
 
