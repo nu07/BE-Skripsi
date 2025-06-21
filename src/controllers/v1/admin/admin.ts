@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { Prisma, PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import ExcelJS from "exceljs";
+import ExcelJS from 'exceljs';
 
 const prisma = new PrismaClient();
 
@@ -1016,21 +1016,21 @@ export const downloadMahasiswaReport = async (req: Request, res: Response) => {
   try {
     const mahasiswaList = await prisma.mahasiswa.findMany({
       orderBy: {
-        nama: "asc", // urut berdasarkan nama
+        nama: 'asc', // urut berdasarkan nama
       },
     });
 
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Laporan Mahasiswa");
+    const worksheet = workbook.addWorksheet('Laporan Mahasiswa');
 
     // Header kolom
     worksheet.columns = [
-      { header: "No", key: "no", width: 5 },
-      { header: "NIM", key: "nim", width: 20 },
-      { header: "Nama", key: "nama", width: 30 },
-      { header: "Email", key: "email", width: 30 },
-      { header: "Kelayakan Skripsi", key: "skripsi", width: 20 },
-      { header: "Kelayakan Sidang", key: "sidang", width: 20 },
+      { header: 'No', key: 'no', width: 5 },
+      { header: 'NIM', key: 'nim', width: 20 },
+      { header: 'Nama', key: 'nama', width: 30 },
+      { header: 'Email', key: 'email', width: 30 },
+      { header: 'Kelayakan Skripsi', key: 'skripsi', width: 20 },
+      { header: 'Kelayakan Sidang', key: 'sidang', width: 20 },
     ];
 
     // Data
@@ -1040,24 +1040,21 @@ export const downloadMahasiswaReport = async (req: Request, res: Response) => {
         nim: mhs.nim,
         nama: mhs.nama,
         email: mhs.email,
-        skripsi: mhs.isEligibleForSkripsi ? "Ya" : "Tidak",
-        sidang: mhs.isEligibleForSidang ? "Ya" : "Tidak",
+        skripsi: mhs.isEligibleForSkripsi ? 'Ya' : 'Tidak',
+        sidang: mhs.isEligibleForSidang ? 'Ya' : 'Tidak',
       });
     });
 
     // Header response untuk download file
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
-    res.setHeader("Content-Disposition", "attachment; filename=laporan-mahasiswa.xlsx");
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=laporan-mahasiswa.xlsx');
 
     await workbook.xlsx.write(res);
     res.end();
   } catch (error) {
     console.error(error);
     res.status(500).json({
-      message: "Gagal mengunduh laporan mahasiswa.",
+      message: 'Gagal mengunduh laporan mahasiswa.',
       error: error instanceof Error ? error.message : error,
     });
   }
@@ -1067,7 +1064,7 @@ export const downloadAdminReport = async (req: Request, res: Response) => {
   try {
     const adminList = await prisma.admin.findMany({
       orderBy: {
-        nama: "asc",
+        nama: 'asc',
       },
       select: {
         id: true,
@@ -1077,13 +1074,13 @@ export const downloadAdminReport = async (req: Request, res: Response) => {
     });
 
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Laporan Admin");
+    const worksheet = workbook.addWorksheet('Laporan Admin');
 
     worksheet.columns = [
-      { header: "No", key: "no", width: 5 },
-      { header: "ID", key: "id", width: 30 },
-      { header: "Nama", key: "nama", width: 30 },
-      { header: "Email", key: "email", width: 30 },
+      { header: 'No', key: 'no', width: 5 },
+      { header: 'ID', key: 'id', width: 30 },
+      { header: 'Nama', key: 'nama', width: 30 },
+      { header: 'Email', key: 'email', width: 30 },
     ];
 
     adminList.forEach((admin, index) => {
@@ -1095,27 +1092,22 @@ export const downloadAdminReport = async (req: Request, res: Response) => {
       });
     });
 
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
-    res.setHeader("Content-Disposition", "attachment; filename=laporan-admin.xlsx");
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=laporan-admin.xlsx');
 
     await workbook.xlsx.write(res);
     res.end();
   } catch (error) {
     console.error(error);
     return res.status(500).json({
-      message: "Gagal mengunduh laporan admin.",
+      message: 'Gagal mengunduh laporan admin.',
       error: error instanceof Error ? error.message : error,
     });
   }
 };
 
-
 export const downloadPembayaranSkripsiReport = async (req: Request, res: Response) => {
-  
-  const fullUrl = req.protocol + '://' + req.get('host')
+  const fullUrl = req.protocol + '://' + req.get('host');
   try {
     const pembayaranList = await prisma.skripsi.findMany({
       include: {
@@ -1128,53 +1120,49 @@ export const downloadPembayaranSkripsiReport = async (req: Request, res: Respons
       },
       orderBy: {
         mahasiswa: {
-          nama: "asc",
+          nama: 'asc',
         },
       },
     });
 
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Pembayaran Skripsi");
+    const worksheet = workbook.addWorksheet('Pembayaran Skripsi');
 
     worksheet.columns = [
-      { header: "No", key: "no", width: 5 },
-      { header: "NIM", key: "nim", width: 15 },
-      { header: "Nama", key: "nama", width: 30 },
-      { header: "Judul Skripsi", key: "judul", width: 40 },
-      { header: "Status", key: "status", width: 15 },
-      { header: "Catatan", key: "catatan", width: 30 },
-      { header: "Bukti Pembayaran", key: "bukti", width: 40 },
+      { header: 'No', key: 'no', width: 5 },
+      { header: 'NIM', key: 'nim', width: 15 },
+      { header: 'Nama', key: 'nama', width: 30 },
+      { header: 'Judul Skripsi', key: 'judul', width: 40 },
+      { header: 'Status', key: 'status', width: 15 },
+      { header: 'Catatan', key: 'catatan', width: 30 },
+      { header: 'Bukti Pembayaran', key: 'bukti', width: 40 },
     ];
 
     pembayaranList.forEach((item, index) => {
       worksheet.addRow({
         no: index + 1,
-        nim: item.mahasiswa?.nim || "-",
-        nama: item.mahasiswa?.nama || "-",
+        nim: item.mahasiswa?.nim || '-',
+        nama: item.mahasiswa?.nama || '-',
         judul: item.judul,
-        status: item.status || "-",
-        catatan: item.catatanPembayaran || "-",
-        bukti: fullUrl + '/v1/' + item.buktiPembayaran || "-",
+        status: item.status || '-',
+        catatan: item.catatanPembayaran || '-',
+        bukti: fullUrl + '/v1/' + item.buktiPembayaran || '-',
       });
     });
 
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
-    res.setHeader("Content-Disposition", "attachment; filename=laporan-pembayaran-skripsi.xlsx");
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=laporan-pembayaran-skripsi.xlsx');
 
     await workbook.xlsx.write(res);
     res.end();
   } catch (error) {
     console.error(error);
     return res.status(500).json({
-      message: "Gagal mengunduh laporan pembayaran skripsi.",
+      message: 'Gagal mengunduh laporan pembayaran skripsi.',
       error: error instanceof Error ? error.message : error,
     });
   }
 };
-
 
 export const downloadLaporanSidang = async (req: Request, res: Response) => {
   try {
@@ -1194,55 +1182,50 @@ export const downloadLaporanSidang = async (req: Request, res: Response) => {
         },
       },
       orderBy: {
-        tanggal_sidang: "asc",
+        tanggal_sidang: 'asc',
       },
     });
 
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Laporan Sidang");
+    const worksheet = workbook.addWorksheet('Laporan Sidang');
 
     worksheet.columns = [
-      { header: "No", key: "no", width: 5 },
-      { header: "NIM", key: "nim", width: 15 },
-      { header: "Nama Mahasiswa", key: "nama", width: 30 },
-      { header: "Judul Skripsi", key: "judul", width: 40 },
-      { header: "Tanggal Sidang", key: "tanggal", width: 20 },
-      { header: "Status", key: "status", width: 15 },
-      { header: "Penguji 1", key: "penguji1", width: 30 },
-      { header: "Penguji 2", key: "penguji2", width: 30 },
-      { header: "Catatan Penguji 1", key: "catatan1", width: 30 },
-      { header: "Catatan Penguji 2", key: "catatan2", width: 30 },
+      { header: 'No', key: 'no', width: 5 },
+      { header: 'NIM', key: 'nim', width: 15 },
+      { header: 'Nama Mahasiswa', key: 'nama', width: 30 },
+      { header: 'Judul Skripsi', key: 'judul', width: 40 },
+      { header: 'Tanggal Sidang', key: 'tanggal', width: 20 },
+      { header: 'Status', key: 'status', width: 15 },
+      { header: 'Penguji 1', key: 'penguji1', width: 30 },
+      { header: 'Penguji 2', key: 'penguji2', width: 30 },
+      { header: 'Catatan Penguji 1', key: 'catatan1', width: 30 },
+      { header: 'Catatan Penguji 2', key: 'catatan2', width: 30 },
     ];
 
     sidangList.forEach((item, index) => {
       worksheet.addRow({
         no: index + 1,
-        nim: item.mahasiswa?.nim || "-",
-        nama: item.mahasiswa?.nama || "-",
-        judul: item.skripsi?.judul || "-",
-        tanggal: item.tanggal_sidang
-          ? new Date(item.tanggal_sidang).toLocaleDateString("id-ID")
-          : "-",
-        status: item.status || "-",
-        penguji1: item.penguji1?.nama || "-",
-        penguji2: item.penguji2?.nama || "-",
-        catatan1: item.catatan_penguji1 || "-",
-        catatan2: item.catatan_penguji2 || "-",
+        nim: item.mahasiswa?.nim || '-',
+        nama: item.mahasiswa?.nama || '-',
+        judul: item.skripsi?.judul || '-',
+        tanggal: item.tanggal_sidang ? new Date(item.tanggal_sidang).toLocaleDateString('id-ID') : '-',
+        status: item.status || '-',
+        penguji1: item.penguji1?.nama || '-',
+        penguji2: item.penguji2?.nama || '-',
+        catatan1: item.catatan_penguji1 || '-',
+        catatan2: item.catatan_penguji2 || '-',
       });
     });
 
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
-    res.setHeader("Content-Disposition", "attachment; filename=laporan-sidang.xlsx");
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=laporan-sidang.xlsx');
 
     await workbook.xlsx.write(res);
     res.end();
   } catch (error) {
     console.error(error);
     return res.status(500).json({
-      message: "Gagal mengunduh laporan sidang.",
+      message: 'Gagal mengunduh laporan sidang.',
       error: error instanceof Error ? error.message : error,
     });
   }
@@ -1252,24 +1235,24 @@ export const downloadLaporanDosen = async (req: Request, res: Response) => {
   try {
     const dosenList = await prisma.dosen.findMany({
       orderBy: {
-        nama: "asc",
+        nama: 'asc',
       },
       select: {
         nidn: true,
         nama: true,
         email: true,
-        deletedAt : true
+        deletedAt: true,
       },
     });
 
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Laporan Dosen");
+    const worksheet = workbook.addWorksheet('Laporan Dosen');
 
     worksheet.columns = [
-      { header: "No", key: "no", width: 5 },
-      { header: "NIDN", key: "nidn", width: 15 },
-      { header: "Nama Dosen", key: "nama", width: 30 },
-      { header: "Email", key: "email", width: 30 },
+      { header: 'No', key: 'no', width: 5 },
+      { header: 'NIDN', key: 'nidn', width: 15 },
+      { header: 'Nama Dosen', key: 'nama', width: 30 },
+      { header: 'Email', key: 'email', width: 30 },
     ];
 
     dosenList.forEach((dosen, index) => {
@@ -1278,22 +1261,19 @@ export const downloadLaporanDosen = async (req: Request, res: Response) => {
         nidn: dosen.nidn,
         nama: dosen.nama,
         email: dosen.email,
-        deleted: dosen.deletedAt
+        deleted: dosen.deletedAt,
       });
     });
 
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
-    res.setHeader("Content-Disposition", "attachment; filename=laporan-dosen.xlsx");
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=laporan-dosen.xlsx');
 
     await workbook.xlsx.write(res);
     res.end();
   } catch (error) {
     console.error(error);
     return res.status(500).json({
-      message: "Gagal mengunduh laporan dosen.",
+      message: 'Gagal mengunduh laporan dosen.',
       error: error instanceof Error ? error.message : error,
     });
   }

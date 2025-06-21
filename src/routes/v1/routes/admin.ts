@@ -43,11 +43,11 @@ router.get('/news/:id', AdminController.getNewsById);
 router.put('/news/:id', [authJwt.verifyToken], AdminController.updateNews);
 router.delete('/news/:id', [authJwt.verifyToken], AdminController.deleteNews);
 
-router.get('/report/allmahasiswa', [authJwt.verifyToken], AdminController.downloadMahasiswaReport)
-router.get('/report/alladmin', [authJwt.verifyToken], AdminController.downloadAdminReport)
-router.get('/report/allpembayaran', [authJwt.verifyToken], AdminController.downloadPembayaranSkripsiReport)
-router.get('/report/allsidang', [authJwt.verifyToken], AdminController.downloadLaporanSidang)
-router.get('/report/alldosen', [authJwt.verifyToken], AdminController.downloadLaporanDosen)
+router.get('/report/allmahasiswa', [authJwt.verifyToken], AdminController.downloadMahasiswaReport);
+router.get('/report/alladmin', [authJwt.verifyToken], AdminController.downloadAdminReport);
+router.get('/report/allpembayaran', [authJwt.verifyToken], AdminController.downloadPembayaranSkripsiReport);
+router.get('/report/allsidang', [authJwt.verifyToken], AdminController.downloadLaporanSidang);
+router.get('/report/alldosen', [authJwt.verifyToken], AdminController.downloadLaporanDosen);
 
 // jadwal sidang
 
