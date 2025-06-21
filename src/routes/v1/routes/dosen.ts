@@ -28,4 +28,7 @@ router.get('/dosen/:id', [authJwt.verifyToken], DosenController.getDosenById);
 router.put('/dosen/:id', [authJwt.verifyToken], DosenController.updateDosen);
 router.delete('/dosen/:id', [authJwt.verifyToken], DosenController.deleteDosen);
 
+router.get('/report/listbimbingan', [authJwt.verifyToken], DosenController.downloadLaporanBimbingan)
+router.get('/report/listsidang', [authJwt.verifyToken], DosenController.downloadListSidangDiujiExcel)
+
 export default router;

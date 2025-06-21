@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Prisma, PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import ExcelJS from "exceljs";
 
 const prisma = new PrismaClient();
 
@@ -617,5 +618,162 @@ export const deleteDosen = async (req: Request, res: Response) => {
     res.status(200).json({ message: 'Dosen berhasil dihapus (soft delete)' });
   } catch (error) {
     res.status(500).json({ message: 'Gagal menghapus dosen' });
+  }
+};
+
+
+
+
+export const downloadLaporanBimbingan = async (req: Request, res: Response) => {
+  const dosenId = req.userId;
+
+  try {
+    // Ambil semua skripsi yang dibimbing dosen
+    const skripsiList = await prisma.skripsi.findMany({
+      where: {
+        OR: [{ id_pembimbing1: dosenId }, { id_pembimbing2: dosenId }],
+      },
+      include: {
+        mahasiswa: {
+          select: { nama: true, nim: true },
+        },
+      },
+    });
+
+    const mahasiswaIds = skripsiList.map((s) => s.id_mahasiswa);
+
+    const approvals = await prisma.approvalSkripsi.findMany({
+      where: {
+        id_mahasiswa: { in: mahasiswaIds },
+        id_dosen: dosenId,
+      },
+    });
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Daftar Bimbingan");
+
+    worksheet.columns = [
+      { header: "No", key: "no", width: 5 },
+      { header: "NIM", key: "nim", width: 15 },
+      { header: "Nama", key: "nama", width: 25 },
+      { header: "Judul Skripsi", key: "judul", width: 40 },
+      { header: "Sebagai", key: "role", width: 15 },
+      { header: "Status", key: "status", width: 10 },
+      { header: "Catatan", key: "catatan", width: 30 },
+    ];
+
+    skripsiList.forEach((skripsi, index) => {
+      const approval = approvals.find(
+        (a) => a.id_mahasiswa === skripsi.id_mahasiswa
+      );
+
+      worksheet.addRow({
+        no: index + 1,
+        nim: skripsi.mahasiswa.nim,
+        nama: skripsi.mahasiswa.nama,
+        judul: skripsi.judul,
+        role: skripsi.id_pembimbing1 === dosenId ? "Pembimbing 1" : "Pembimbing 2",
+        status:
+          approval?.status === true
+            ? "ACC"
+            : approval?.status === false
+            ? "Tolak"
+            : "Belum",
+        catatan: approval?.catatan ?? "-",
+      });
+    });
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", "attachment; filename=bimbingan.xlsx");
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Gagal mengunduh laporan bimbingan.",
+      error: error instanceof Error ? error.message : error,
+    });
+  }
+};
+
+
+export const downloadListSidangDiujiExcel = async (req: Request, res: Response) => {
+  const dosenId = req.userId;
+
+  try {
+    const sidangList = await prisma.pendaftaranSidang.findMany({
+      where: {
+        OR: [
+          { id_penguji1: dosenId },
+          { id_penguji2: dosenId },
+        ],
+      },
+      include: {
+        mahasiswa: {
+          select: { nama: true, nim: true, email: true },
+        },
+        skripsi: {
+          select: { judul: true },
+        },
+      },
+      orderBy: {
+        tanggal_sidang: 'asc',
+      },
+    });
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Sidang yang Diuji");
+
+    worksheet.columns = [
+      { header: "No", key: "no", width: 5 },
+      { header: "NIM", key: "nim", width: 15 },
+      { header: "Nama", key: "nama", width: 25 },
+      { header: "Email", key: "email", width: 30 },
+      { header: "Judul Skripsi", key: "judul", width: 40 },
+      { header: "Tanggal Sidang", key: "tanggal", width: 20 },
+      { header: "Status Sidang", key: "status", width: 15 },
+      { header: "Sebagai", key: "sebagai", width: 15 },
+      { header: "Catatan", key: "catatan", width: 30 },
+    ];
+
+    sidangList.forEach((item, index) => {
+      const sebagai = item.id_penguji1 === dosenId ? "Penguji 1" : "Penguji 2";
+      const catatan = item.id_penguji1 === dosenId
+        ? item.catatan_penguji1
+        : item.catatan_penguji2;
+
+      worksheet.addRow({
+        no: index + 1,
+        nim: item.mahasiswa?.nim || "-",
+        nama: item.mahasiswa?.nama || "-",
+        email: item.mahasiswa?.email || "-",
+        judul: item.skripsi?.judul || "-",
+        tanggal: item.tanggal_sidang
+          ? new Date(item.tanggal_sidang).toLocaleDateString("id-ID")
+          : "-",
+        status: item.status || "-",
+        sebagai,
+        catatan: catatan ?? "-",
+      });
+    });
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", "attachment; filename=sidang-diuji.xlsx");
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Gagal mengunduh laporan sidang yang diuji.",
+      error: error instanceof Error ? error.message : error,
+    });
   }
 };
