@@ -358,7 +358,7 @@ export const createDosen = async (req: Request, res: Response) => {
     const isSingle = !Array.isArray(req.body);
 
     if (rawData.length === 0) {
-      return res.status(400).json({ message: "Data dosen tidak boleh kosong." });
+      return res.status(400).json({ message: 'Data dosen tidak boleh kosong.' });
     }
 
     const insertedDosen: any[] = [];
@@ -372,8 +372,8 @@ export const createDosen = async (req: Request, res: Response) => {
         const failResponse = {
           nidn,
           email,
-          status: "failed",
-          reason: "Field wajib tidak boleh kosong",
+          status: 'failed',
+          reason: 'Field wajib tidak boleh kosong',
         };
         if (isSingle) return res.status(400).json(failResponse);
         skippedDosen.push(failResponse);
@@ -389,16 +389,16 @@ export const createDosen = async (req: Request, res: Response) => {
       if (existingDosen || existingAdmin || existingMahasiswa) {
         const reason = existingDosen
           ? existingDosen.nidn === nidn
-            ? "NIDN sudah digunakan"
-            : "Email sudah digunakan oleh dosen"
+            ? 'NIDN sudah digunakan'
+            : 'Email sudah digunakan oleh dosen'
           : existingAdmin
-          ? "Email sudah digunakan oleh admin"
-          : "Email sudah digunakan oleh mahasiswa";
+            ? 'Email sudah digunakan oleh admin'
+            : 'Email sudah digunakan oleh mahasiswa';
 
         const failResponse = {
           nidn,
           email,
-          status: "failed",
+          status: 'failed',
           reason,
         };
 
@@ -425,7 +425,7 @@ export const createDosen = async (req: Request, res: Response) => {
     if (isSingle) {
       return res.status(201).json({
         ...insertedDosen[0],
-        status: "success",
+        status: 'success',
       });
     }
 
@@ -438,13 +438,11 @@ export const createDosen = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({
-      message: "Terjadi kesalahan saat menyimpan data dosen.",
+      message: 'Terjadi kesalahan saat menyimpan data dosen.',
       error: error instanceof Error ? error.message : error,
     });
   }
 };
-
-
 
 export const getAllDosen = async (req: Request, res: Response) => {
   try {
