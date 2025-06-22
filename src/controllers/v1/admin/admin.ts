@@ -801,7 +801,6 @@ export const getAllPendaftaranSidang = async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 10;
     const search = (req.query.search as string) || '';
     const showDeleted = req.query.showDeleted === 'true';
-    const skip = (page - 1) * limit;
 
     const whereClause: Prisma.PendaftaranSidangWhereInput = {};
 
@@ -824,8 +823,6 @@ export const getAllPendaftaranSidang = async (req: Request, res: Response) => {
     const [rawList, total] = await Promise.all([
       prisma.pendaftaranSidang.findMany({
         where: whereClause,
-        skip,
-        take: limit,
         include: {
           mahasiswa: true,
           skripsi: true,
@@ -836,19 +833,25 @@ export const getAllPendaftaranSidang = async (req: Request, res: Response) => {
       prisma.pendaftaranSidang.count({ where: whereClause }),
     ]);
 
-    // Urutkan berdasarkan status: unfinished → ongoing → finished
+    // Sort status secara manual: menunggu → unfinished → ongoing → finished
     const getStatusOrder = (status: string) => {
-      if (status === 'unfinished') return 0;
-      if (status === 'ongoing') return 1;
-      if (status === 'finished') return 2;
-      return 3; // fallback jika status tidak dikenal
+      if (status === 'menunggu') return 0;
+      if (status === 'unfinished') return 1;
+      if (status === 'ongoing') return 2;
+      if (status === 'finished') return 3;
+      return 4; // fallback
     };
 
-    const sortedList = rawList.sort((a, b) => getStatusOrder(a.status) - getStatusOrder(b.status));
+    const sortedList = rawList.sort(
+      (a, b) => getStatusOrder(a.status) - getStatusOrder(b.status)
+    );
+
+    // Pagination manual setelah sort
+    const paginatedList = sortedList.slice((page - 1) * limit, page * limit);
 
     return res.status(200).json({
       message: 'Daftar pendaftaran sidang berhasil diambil',
-      data: sortedList,
+      data: paginatedList,
       pagination: {
         total,
         currentPage: page,
@@ -861,6 +864,7 @@ export const getAllPendaftaranSidang = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Terjadi kesalahan saat mengambil data.' });
   }
 };
+
 
 // export const createJadwalSidang = async (req: Request, res: Response) => {
 //   try {

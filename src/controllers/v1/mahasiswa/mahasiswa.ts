@@ -399,7 +399,7 @@ export const daftarSidang = async (req: Request, res: Response) => {
       data: {
         id_mahasiswa: mahasiswaId,
         id_skripsi: skripsi.id,
-        status: 'Menunggu',
+        status: 'menunggu',
       },
     });
 
