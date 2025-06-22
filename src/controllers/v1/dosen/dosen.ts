@@ -276,6 +276,16 @@ export const inputCatatanPenguji = async (req: Request, res: Response) => {
       data: dataUpdate,
     });
 
+    if (
+      (sidang.id_penguji1 === dosenId && sidang.catatan_penguji2) ||
+      (sidang.id_penguji2 === dosenId && sidang.catatan_penguji1)
+    ) {
+      await prisma.pendaftaranSidang.update({
+        where: { id: pendaftaranId },
+        data: { status: 'finished' },
+      });
+    }
+
     res.status(200).json({ message: 'Catatan penguji berhasil disimpan.', data: update });
   } catch (error) {
     console.error(error);
