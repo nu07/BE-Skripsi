@@ -343,7 +343,7 @@ export const getAllSkripsi = async (req: Request, res: Response) => {
 export const updateSidangByAdmin = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { status, id_penguji1, id_penguji2, tanggal_sidang } = req.body;
+    const { status, id_penguji1, id_penguji2, tanggal_sidang, ruangan } = req.body;
 
     // Update pendaftaran sidang
     const updatedSidang = await prisma.pendaftaranSidang.update({
@@ -353,6 +353,7 @@ export const updateSidangByAdmin = async (req: Request, res: Response) => {
         id_penguji1: id_penguji1 || null,
         id_penguji2: id_penguji2 || null,
         tanggal_sidang,
+        ruangan
       },
       include: {
         mahasiswa: { select: { id: true } }, // Ambil id mahasiswa
@@ -849,9 +850,7 @@ export const getAllPendaftaranSidang = async (req: Request, res: Response) => {
       }
     };
 
-    const sortedList = rawList.sort(
-      (a, b) => getStatusOrder(a.status) - getStatusOrder(b.status)
-    );
+    const sortedList = rawList.sort((a, b) => getStatusOrder(a.status) - getStatusOrder(b.status));
 
     // Pagination setelah sorting
     const paginatedList = sortedList.slice((page - 1) * limit, page * limit);
@@ -871,9 +870,6 @@ export const getAllPendaftaranSidang = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Terjadi kesalahan saat mengambil data.' });
   }
 };
-
-
-
 
 // export const createJadwalSidang = async (req: Request, res: Response) => {
 //   try {

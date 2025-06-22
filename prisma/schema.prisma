@@ -72,6 +72,7 @@ model PendaftaranSidang {
   status                String // "Menunggu", "Disetujui", "Ditolak", dll.
   catatan               String?
   tanggal_sidang        DateTime?
+  ruangan               String?
   // Ganti penguji tunggal jadi dua penguji
   id_penguji1           String?
   id_penguji2           String?

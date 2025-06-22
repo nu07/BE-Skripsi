@@ -60,6 +60,7 @@ Table PendaftaranSidang {
   status String [not null]
   catatan String
   tanggal_sidang DateTime
+  ruangan String
   id_penguji1 String
   id_penguji2 String
   catatan_penguji1 String
