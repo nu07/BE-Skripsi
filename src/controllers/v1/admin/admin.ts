@@ -833,20 +833,27 @@ export const getAllPendaftaranSidang = async (req: Request, res: Response) => {
       prisma.pendaftaranSidang.count({ where: whereClause }),
     ]);
 
-    // Sort status secara manual: menunggu → unfinished → ongoing → finished
+    // Urutan status: menunggu → unfinished → ongoing → finished
     const getStatusOrder = (status: string) => {
-      if (status === 'menunggu') return 0;
-      if (status === 'unfinished') return 1;
-      if (status === 'ongoing') return 2;
-      if (status === 'finished') return 3;
-      return 4; // fallback
+      switch (status.toLowerCase()) {
+        case 'menunggu':
+          return 0;
+        case 'unfinished':
+          return 1;
+        case 'ongoing':
+          return 2;
+        case 'finished':
+          return 3;
+        default:
+          return 4;
+      }
     };
 
     const sortedList = rawList.sort(
       (a, b) => getStatusOrder(a.status) - getStatusOrder(b.status)
     );
 
-    // Pagination manual setelah sort
+    // Pagination setelah sorting
     const paginatedList = sortedList.slice((page - 1) * limit, page * limit);
 
     return res.status(200).json({
@@ -864,6 +871,8 @@ export const getAllPendaftaranSidang = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Terjadi kesalahan saat mengambil data.' });
   }
 };
+
+
 
 
 // export const createJadwalSidang = async (req: Request, res: Response) => {
