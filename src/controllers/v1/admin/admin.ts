@@ -353,7 +353,7 @@ export const updateSidangByAdmin = async (req: Request, res: Response) => {
         id_penguji1: id_penguji1 || null,
         id_penguji2: id_penguji2 || null,
         tanggal_sidang,
-        ruangan
+        ruangan,
       },
       include: {
         mahasiswa: { select: { id: true } }, // Ambil id mahasiswa
@@ -678,10 +678,14 @@ export const createNews = async (req: Request, res: Response) => {
       },
     });
 
+    if(title.length < 5 || content.length < 5 ){
+      return res.status(500).json({ message: 'Panjang judul minimal 5 huruf.' });
+
+    }
+
     return res.status(201).json(news);
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Terjadi kesalahan server.' });
   }
 };
 

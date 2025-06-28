@@ -34,19 +34,6 @@ async function init() {
   folder.map((data) => {
     CheckFolder(data);
   });
-  // try {
-  //   const checkRoles = await prisma.role.count();
-  //   console.log(checkRoles);
-  //   if (checkRoles === 0) {
-  //     await prisma.role.createMany({
-  //       data: [{ roles: 'Admin' }, { roles: 'User' }],
-  //     });
-  //   } else {
-  //     console.info('Admin And User Already Added');
-  //   }
-  // } catch (e) {
-  //   console.error('error: ', e);
-  // }
 }
 
 app.listen(Port, () => {
