@@ -678,9 +678,8 @@ export const createNews = async (req: Request, res: Response) => {
       },
     });
 
-    if(title.length < 5 || content.length < 5 ){
-      return res.status(500).json({ message: 'Panjang judul minimal 5 huruf.' });
-
+    if (title.length < 5 || content.length < 5) {
+      return res.status(500).json({ message: 'Panjang judul atau konten minimal 5 huruf.' });
     }
 
     return res.status(201).json(news);
